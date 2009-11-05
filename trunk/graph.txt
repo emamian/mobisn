@@ -1,5 +1,0 @@
-head{
-music{jazz,rock,pop,metal},
-are{drawing,theatre,},
-sports{basketball,football,swimming}
-} 
