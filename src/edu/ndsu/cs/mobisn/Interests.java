@@ -27,17 +27,17 @@ public class Interests {
 		head.addChild(ch);
 		
 		this.root = head;
+		setAllDepths();
 	}
 	
 	public String toString() {
-		// TODO Auto-generated method stub
 		Vector v = new Vector();
 		String s = "";
 		v.addElement(root);
 		while (!v.isEmpty()) {
 			NodeData g = (NodeData) v.firstElement();
 			v.removeElementAt(0);
-			s += (g.isInterested())?"1":"0";//g.name;
+			s += (g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0";//g.name;
 			for (int i = 0; i < g.getChilds().size(); i++) {
 				v.addElement(g.getChilds().elementAt(i));				
 			}
@@ -45,5 +45,9 @@ public class Interests {
 				s+=",";
 		}
 		return s;
+	}
+	
+	public void setAllDepths(){
+		root.setDepth(0);
 	}
 }

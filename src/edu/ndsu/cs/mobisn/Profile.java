@@ -12,7 +12,7 @@ public class Profile{
 	private String age;
 	private String family;
 	private String name;
-	private String interests;
+	private Interests interests = new Interests();
 
 	public Profile() {
 		super();
@@ -129,4 +129,9 @@ public class Profile{
 		f.append(items[2]);
 	}
 
+	public String getInterests() {
+		return interests.toString();
+	}
+
+	
 }

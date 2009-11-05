@@ -6,7 +6,18 @@ public class NodeData {
 	private String name;
 	private boolean interested=false;
 	private Vector childs;
+	private int depth;
 
+	public double getDepth() {
+		return depth;
+	}
+	public void setDepth(int depth) {
+		this.depth = depth;
+		for (int i = 0; i < childs.size(); i++) {
+			NodeData ch = (NodeData) childs.elementAt(i);
+			ch.setDepth(depth+1);
+		}
+	}
 	public NodeData(String name) {
 		this.name = name;
 		this.childs = new Vector();
