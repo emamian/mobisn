@@ -2,12 +2,13 @@ package edu.ndsu.cs.mobisn;
 import java.util.Vector;
 
 public class Interests {
-	NodeData head;
+	NodeData root;
 
 	Interests(){
 
-		NodeData head = new NodeData("head");
-		NodeData ch = new NodeData("music");
+		NodeData head = new NodeData("root");
+		NodeData ch;
+		ch = new NodeData("music");
 		ch.addChild(new NodeData("jazz"));
 		ch.addChild(new NodeData("pop"));
 		ch.addChild(new NodeData("rock"));
@@ -25,14 +26,14 @@ public class Interests {
 		ch.addChild(new NodeData("theatre"));
 		head.addChild(ch);
 		
-		this.head = head;
+		this.root = head;
 	}
 	
 	public String toString() {
 		// TODO Auto-generated method stub
 		Vector v = new Vector();
 		String s = "";
-		v.addElement(head);
+		v.addElement(root);
 		while (!v.isEmpty()) {
 			NodeData g = (NodeData) v.firstElement();
 			v.removeElementAt(0);
