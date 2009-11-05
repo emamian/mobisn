@@ -13,6 +13,7 @@ public class Interests {
 		ch.addChild(new NodeData("pop"));
 		ch.addChild(new NodeData("rock"));
 		ch.addChild(new NodeData("metal"));
+		ch.setInterested(true);
 		head.addChild(ch);
 		
 		ch = new NodeData("sports");
@@ -37,7 +38,7 @@ public class Interests {
 		while (!v.isEmpty()) {
 			NodeData g = (NodeData) v.firstElement();
 			v.removeElementAt(0);
-			s += (g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0";//g.name;
+			s += g.getName()+":"+((g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0");//g.name;
 			for (int i = 0; i < g.getChilds().size(); i++) {
 				v.addElement(g.getChilds().elementAt(i));				
 			}
