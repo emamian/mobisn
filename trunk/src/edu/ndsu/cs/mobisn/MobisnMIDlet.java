@@ -1,4 +1,6 @@
 package edu.ndsu.cs.mobisn;
+import java.util.Vector;
+
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -49,6 +51,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			menu.setTitle(profile.getFullName());
 			myProfileScreen = new GUIProfile(this);
 			interestsScreen = new GUIInterests(this);
+			
 		} catch (Exception e) {
 			System.err.println("could not initialize DemoMidlet.");
 			e.printStackTrace();
@@ -85,6 +88,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			mobiClient = new GUIMobiClient(this);
 			break;
 		case 2:
+			Vector v = Interests.getVectorFromString(profile.getInterestsVector());
 			myProfileScreen.show();
 			break;
 
