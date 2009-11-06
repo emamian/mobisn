@@ -1,12 +1,17 @@
 package edu.ndsu.cs.mobisn;
+
 import java.util.Vector;
 
+import javax.microedition.lcdui.Alert;
+import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDlet;
+
+import com.sun.midp.main.Main;
 
 public class MobisnMIDlet extends MIDlet implements CommandListener {
 	/** The messages are shown in this demo this amount of time. */
@@ -19,10 +24,11 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private final Command OK_CMD = new Command("Ok", Command.SCREEN, 1);
 
 	/** A list of menu items */
-	private static final String[] elements = { "System Management", "Group Management", "Profile Management","Interests" };
+	private static final String[] elements = { "System Management",
+			"Group Management", "Profile Management", "Interests" };
 
 	/** value is true after creating the server/client */
-	private boolean isInit = false;
+	private boolean isInit = true;
 
 	/** A menu list instance */
 	private final List menu = new List("MobiSN Demo", List.IMPLICIT, elements,
@@ -33,6 +39,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	/** A GUI part of server that publishes images. */
 	private GUIMobiServer mobiServer = null;
+	private BTMobiServer btMobiServer = null;
+	private BTMobiClient btMobiClient = null;
 
 	private Profile profile;
 	private GUIProfile myProfileScreen;
@@ -42,20 +50,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	 * Constructs main screen of the MIDlet.
 	 */
 	public MobisnMIDlet() {
-		try {
-
-			menu.addCommand(EXIT_CMD);
-			menu.addCommand(OK_CMD);
-			menu.setCommandListener(this);
-			profile = new Profile();
-			menu.setTitle(profile.getFullName());
-			myProfileScreen = new GUIProfile(this);
-			interestsScreen = new GUIInterests(this);
-			
-		} catch (Exception e) {
-			System.err.println("could not initialize DemoMidlet.");
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -83,13 +77,14 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			break;
 
 		case 1:
-			if(mobiClient != null)
+			if (mobiClient != null)
 				mobiClient.destroy();
 			mobiClient = new GUIMobiClient(this);
 			break;
 		case 2:
 			try {
-				Vector v = Interests.getVectorFromString(profile.getInterestsVectorString());
+				Vector v = Interests.getVectorFromString(profile
+						.getInterestsVectorString());
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -106,8 +101,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 			break;
 		}
-
-		isInit = true;
 	}
 
 	/**
@@ -143,7 +136,52 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	/** Shows main menu of MIDlet on the screen. */
 	void show() {
+		if (isInit)
+			init();
 		Display.getDisplay(this).setCurrent(menu);
+	}
+
+	private void init() {
+		try {
+			menu.addCommand(EXIT_CMD);
+			menu.append("loading...", null);
+			menu.setCommandListener(this);
+
+			profile = new Profile();
+			menu.setTitle(profile.getFullName());
+			try {
+				btMobiServer = new BTMobiServer(this);
+			} catch (Exception e) {
+				System.err.println("Can't initialize bluetooth: " + e);
+				e.printStackTrace();
+				showLoadErr("Can't initialize bluetooth server");
+				return;
+			}
+			try {
+				btMobiClient = new BTMobiClient(this);
+			} catch (Exception e) {
+				System.err.println("Can't initialize bluetooth: " + e);
+				e.printStackTrace();
+				showLoadErr("Can't initialize bluetooth server");
+				return;
+			}
+
+			myProfileScreen = new GUIProfile(this);
+			interestsScreen = new GUIInterests(this);
+			menu.addCommand(OK_CMD);
+
+		} catch (Exception e) {
+			System.err.println("could not initialize DemoMidlet.");
+			e.printStackTrace();
+		}
+
+	}
+
+	private void showLoadErr(String resMsg) {
+		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
+		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
+		menu.append(resMsg, null);
+		Display.getDisplay(this).setCurrent(al, menu);
 	}
 
 	/**
@@ -151,14 +189,17 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	 */
 	public void startApp() {
 		try {
-
-			if (!isInit) {
+			if (isInit) {
 				show();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("could not start Midlet (startApp()");
 		}
+	}
+
+	public void setBT(GUIMobiServer guiMobiServer) {
+		guiMobiServer.setBt_server(this.btMobiServer);
 	}
 
 }

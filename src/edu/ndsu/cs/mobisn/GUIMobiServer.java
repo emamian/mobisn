@@ -43,6 +43,10 @@ public class GUIMobiServer implements CommandListener {
 	/** This object handles the real transmission. */
 	private BTMobiServer bt_server;
 
+	public void setBt_server(BTMobiServer btServer) {
+		bt_server = btServer;
+	}
+
 	/** shows profile is online and viewable by others */
 	private boolean isProfilePublished = false;
 
@@ -52,7 +56,7 @@ public class GUIMobiServer implements CommandListener {
 		super();
 		this.parent = parent;
 		this.profile = parent.getProfile();
-		bt_server = new BTMobiServer(this);
+		parent.setBT(this);
 
 		// prepare main screen
 		imagesList.addCommand(backCommand);

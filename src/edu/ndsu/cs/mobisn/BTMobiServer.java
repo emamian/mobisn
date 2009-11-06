@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
@@ -34,7 +35,7 @@ public class BTMobiServer implements Runnable {
 	private ServiceRecord record;
 
 	/** Keeps the parent reference to process specific actions. */
-	private GUIMobiServer parent;
+	private MobisnMIDlet parent;
 
 	/** Becomes 'true' when this component is finalized. */
 	private boolean isClosed;
@@ -48,26 +49,33 @@ public class BTMobiServer implements Runnable {
 	/** Optimization: keeps the table of data elements to be published. */
 	private final Hashtable dataElements = new Hashtable();
 
+	private boolean isBTReady;
+
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
 	 * thread to "avoid dead lock".
+	 * @throws Exception 
 	 */
-	BTMobiServer(GUIMobiServer parent) {
+	BTMobiServer(MobisnMIDlet parent) throws Exception {
 		this.parent = parent;
 		this.myProfile = parent.getProfile();
-
+		isBTReady = false;
+		init();
 		// we have to initialize a system in different thread...
-		accepterThread = new Thread(this);
-		accepterThread.start();
+	}
+	public boolean startThread(){
+		try {
+			accepterThread = new Thread(this);
+			accepterThread.start();
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 
-	/**
-	 * Accepts a new client and send him/her a requested image.
-	 */
-	public void run() {
-		boolean isBTReady = false;
-
-		try {
+	private void init() throws Exception {
 			// create/get a local device
 			localDevice = LocalDevice.getLocalDevice();
 
@@ -107,13 +115,14 @@ public class BTMobiServer implements Runnable {
 
 			// remember we've reached this point.
 			isBTReady = true;
-		} catch (Exception e) {
-			System.err.println("Can't initialize bluetooth: " + e);
-			e.printStackTrace();
-		}
 
-		parent.completeInitialization(isBTReady);
+	}
 
+	/**
+	 * Accepts a new client and send him/her a requested image.
+	 */
+	public void run() {
+		
 		// nothing to do if no bluetooth available
 		if (!isBTReady) {
 			return;
