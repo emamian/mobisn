@@ -1,6 +1,7 @@
 package edu.ndsu.cs.mobisn;
 import java.util.Hashtable;
 import java.util.Random;
+import java.util.Vector;
 
 import javax.bluetooth.DataElement;
 import javax.microedition.lcdui.Form;
@@ -78,7 +79,7 @@ public class Profile{
 		base.addElement(de);
 		de = new DataElement(DataElement.STRING, "age:" + age);
 		base.addElement(de);
-		de = new DataElement(DataElement.STRING, "interests:" + getInterestsVector());
+		de = new DataElement(DataElement.STRING, "interests:" + getInterestsVectorString());
 		base.addElement(de);
 
 		return base;
@@ -98,7 +99,7 @@ public class Profile{
 		if (!h.containsKey("age"))
 			return false;
 		this.age = (String) h.get("age");
-
+		
 		return true;
 	}
 
@@ -131,11 +132,43 @@ public class Profile{
 		f.append(items[2]);
 	}
 
-	public String getInterestsVector() {
-		return interests.toVectorString();
+	public String getInterestsVectorString() {
+		return interests.getVectorString();
 	}
 
 	public NodeData getRootInterest(){
 		return interests.getRoot();
+	}
+	
+	public double getRelevance(String interestsVectorString) throws Exception{
+		Vector v = Interests.getVectorFromString(interestsVectorString);
+		Vector myVector = interests.getVector();
+		System.out.println("relevalnce: "+myVector.toString()+" -> "+v.toString());
+		return cosineAngle(myVector, v);
+	}
+	private double cosineAngle(Vector v1 , Vector v2){
+		double nominator = 0.0;
+		
+		if(v1.size() != v2.size())
+			return -2.0;
+		for (int i = 0; i < v1.size(); i++) {
+			Double d1 = Double.valueOf(v1.elementAt(i).toString());
+			Double d2 = Double.valueOf(v2.elementAt(i).toString());
+			nominator += d1.doubleValue()*d2.doubleValue();
+		}
+		double sizes = sizeOfVector(v1)*sizeOfVector(v2);
+		if(sizes == 0.0)
+			return -3.0;
+		return nominator/sizes;
+	}
+	private double sizeOfVector(Vector v){
+		double size = 0.0;
+		for (int i = 0; i < v.size(); i++) {
+			double d = Double.parseDouble(v.elementAt(i).toString());
+			size += d*d;
+			
+		}
+		size = Math.sqrt(size);
+		return size;
 	}
 }

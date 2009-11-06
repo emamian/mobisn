@@ -1,6 +1,7 @@
 package edu.ndsu.cs.mobisn;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -181,7 +182,20 @@ public class GUIMobiClient implements CommandListener {
 		}
 
 		while (keys.hasMoreElements()) {
-			listScreen.append((String) keys.nextElement(), null);
+			String key = (String) keys.nextElement();
+			Profile myProfile = parent.getProfile();
+			String othersInterests = (String)((Vector)base.get(key)).elementAt(2);
+			double relevance;
+			try {
+				relevance = myProfile.getRelevance(othersInterests);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return false;
+			}
+			if(relevance < -1.0)
+				return false;
+			listScreen.append(key+"(relevance:"+relevance+")", null);
 		}
 
 		Display.getDisplay(parent).setCurrent(listScreen);

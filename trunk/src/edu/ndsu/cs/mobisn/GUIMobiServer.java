@@ -67,7 +67,6 @@ public class GUIMobiServer implements CommandListener {
 		helpScreen.setTimeout(Alert.FOREVER);
 		helpScreen.setString(helpText);
 		helpScreen.setCommandListener(this);
-
 	}
 
 	void completeInitialization(boolean isBTReady) {

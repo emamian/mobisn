@@ -75,9 +75,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		}
 		switch (menu.getSelectedIndex()) {
 		case 0:
-			if (mobiServer != null) {
-				mobiServer.destroy();
-			}
+//			if (mobiServer != null) {
+//				mobiServer.destroy();
+//			}
 			mobiServer = new GUIMobiServer(this);
 
 			break;
@@ -88,7 +88,12 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			mobiClient = new GUIMobiClient(this);
 			break;
 		case 2:
-			Vector v = Interests.getVectorFromString(profile.getInterestsVector());
+			try {
+				Vector v = Interests.getVectorFromString(profile.getInterestsVectorString());
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			myProfileScreen.show();
 			break;
 
