@@ -75,9 +75,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		}
 		switch (menu.getSelectedIndex()) {
 		case 0:
-//			if (mobiServer != null) {
-//				mobiServer.destroy();
-//			}
+			if (mobiServer != null) {
+				mobiServer.destroy();
+			}
 			mobiServer = new GUIMobiServer(this);
 
 			break;

@@ -143,11 +143,11 @@ public class Profile{
 	public double getRelevance(String interestsVectorString) throws Exception{
 		Vector v = Interests.getVectorFromString(interestsVectorString);
 		Vector myVector = interests.getVector();
-		System.out.println("relevalnce: "+myVector.toString()+" -> "+v.toString());
 		return cosineAngle(myVector, v);
 	}
 	private double cosineAngle(Vector v1 , Vector v2){
 		double nominator = 0.0;
+		System.out.println("relevalnce: "+v1.toString()+" -> "+v2.toString());
 		
 		if(v1.size() != v2.size())
 			return -2.0;
@@ -155,6 +155,7 @@ public class Profile{
 			Double d1 = Double.valueOf(v1.elementAt(i).toString());
 			Double d2 = Double.valueOf(v2.elementAt(i).toString());
 			nominator += d1.doubleValue()*d2.doubleValue();
+			System.out.println(d1+"*"+d2+"->"+nominator);
 		}
 		double sizes = sizeOfVector(v1)*sizeOfVector(v2);
 		if(sizes == 0.0)
