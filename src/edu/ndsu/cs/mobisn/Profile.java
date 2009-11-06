@@ -78,10 +78,13 @@ public class Profile{
 		base.addElement(de);
 		de = new DataElement(DataElement.STRING, "age:" + age);
 		base.addElement(de);
+		de = new DataElement(DataElement.STRING, "interests:" + getInterestsVector());
+		base.addElement(de);
 
 		return base;
 	}
 
+	// should correspond to getServiceRecordElement() function
 	public boolean loadFromHashtable(Hashtable h) {
 
 		if (!h.containsKey("name"))
@@ -128,8 +131,8 @@ public class Profile{
 		f.append(items[2]);
 	}
 
-	public String getInterestsString() {
-		return interests.toString();
+	public String getInterestsVector() {
+		return interests.toVectorString();
 	}
 
 	public NodeData getRootInterest(){

@@ -30,14 +30,15 @@ public class Interests {
 		setAllDepths();
 	}
 	
-	public String toString() {
+	public String toVectorString() {
 		Vector v = new Vector();
 		String s = "";
 		v.addElement(root);
 		while (!v.isEmpty()) {
 			NodeData g = (NodeData) v.firstElement();
 			v.removeElementAt(0);
-			s += g.getTitle()+":"+((g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0");//g.name;
+			//s += g.getTitle()+":"+((g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0");//g.name;
+			s += ((g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0");//g.name;
 			for (int i = 0; i < g.getChilds().size(); i++) {
 				v.addElement(g.getChilds().elementAt(i));				
 			}
@@ -53,5 +54,20 @@ public class Interests {
 	
 	public NodeData getRoot(){
 		return root;
+	}
+	public static Vector getVectorFromString(String s){
+		Vector v = new Vector();
+		int pos = 0;
+		int comma = s.indexOf(",", pos);
+		do{
+			if(comma == -1 ){
+				if(!s.substring(pos).equals("")){
+					v.addElement(s.substring(pos));
+					break;
+				}
+			}
+			v.addElement(s.substring(pos, comma));
+		}while(comma != -1);
+		return v;
 	}
 }
