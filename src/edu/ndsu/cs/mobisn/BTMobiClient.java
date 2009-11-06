@@ -432,9 +432,10 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					System.err.println("some fields are missing: " + h);
 					continue;
 				}
-				Vector v = new Vector(2);
+				Vector v = new Vector(3);
 				v.insertElementAt(p, 0);
 				v.insertElementAt(sr, 1);
+				v.insertElementAt(h.get("interests"), 2);
 				base.put(p.getFullName(), v);
 
 			}
