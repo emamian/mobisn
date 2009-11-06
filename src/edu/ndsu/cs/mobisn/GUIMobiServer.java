@@ -1,4 +1,5 @@
 package edu.ndsu.cs.mobisn;
+
 import javax.bluetooth.DataElement;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -56,7 +57,7 @@ public class GUIMobiServer implements CommandListener {
 		super();
 		this.parent = parent;
 		this.profile = parent.getProfile();
-		parent.setBT(this);
+		parent.setBT4GUI(this);
 
 		// prepare main screen
 		imagesList.addCommand(backCommand);
@@ -73,21 +74,10 @@ public class GUIMobiServer implements CommandListener {
 		helpScreen.setCommandListener(this);
 	}
 
-	void completeInitialization(boolean isBTReady) {
-		// bluetooth was initialized successfully.
-		if (isBTReady) {
-			Ticker t = new Ticker("Change your online status!");
-			imagesList.setTicker(t);
-			Display.getDisplay(parent).setCurrent(imagesList);
-
-			return;
-		}
-
-		// something wrong
-		Alert al = new Alert("Error", "Can't initialize bluetooth", null,
-				AlertType.ERROR);
-		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		Display.getDisplay(parent).setCurrent(al, parent.getDisplayable());
+	public void show() {
+		Ticker t = new Ticker("Change your online status!");
+		imagesList.setTicker(t);
+		Display.getDisplay(parent).setCurrent(imagesList);
 	}
 
 	/**
@@ -153,7 +143,7 @@ public class GUIMobiServer implements CommandListener {
 		// TODO Auto-generated method stub
 		// destroy the running thread of bt_server
 		// i.e. finalize the bluetooth server work
-		 bt_server.destroy();
+		bt_server.destroy();
 	}
 
 	public Profile getProfile() {
