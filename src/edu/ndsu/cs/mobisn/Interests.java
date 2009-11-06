@@ -67,6 +67,8 @@ public class Interests {
 				}
 			}
 			v.addElement(s.substring(pos, comma));
+			pos = comma;
+			comma = s.indexOf(",", pos+1);
 		}while(comma != -1);
 		return v;
 	}
