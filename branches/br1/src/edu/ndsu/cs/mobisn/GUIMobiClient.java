@@ -3,6 +3,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import javax.bluetooth.BluetoothStateException;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -49,35 +50,24 @@ public class GUIMobiClient implements CommandListener {
 
 	private BTMobiClient bt_client;
 
-	GUIMobiClient(MobisnMIDlet parent) {
+	GUIMobiClient(MobisnMIDlet parent) throws BluetoothStateException {
 		this.parent = parent;
 		mainScreen.addCommand(SCR_MAIN_BACK_CMD);
 		mainScreen.addCommand(SCR_MAIN_SEARCH_CMD);
 		mainScreen.setCommandListener(this);
-		bt_client = new BTMobiClient(this);
 		listScreen.addCommand(SCR_IMAGES_BACK_CMD);
 		listScreen.addCommand(SCR_IMAGES_LOAD_CMD);
 		listScreen.setCommandListener(this);
+		bt_client = new BTMobiClient(this);
 		imageScreen.addCommand(SCR_SHOW_BACK_CMD);
 		imageScreen.setCommandListener(this);
 	}
 
-	void completeInitialization(boolean isBTReady) {
-		// bluetooth was initialized successfully.
-		if (isBTReady) {
-			StringItem si = new StringItem("Ready for images search!", null);
-			si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
-			mainScreen.append(si);
-			Display.getDisplay(parent).setCurrent(mainScreen);
-
-			return;
-		}
-
-		// something wrong
-		Alert al = new Alert("Error", "Can't initialize bluetooth", null,
-				AlertType.ERROR);
-		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		Display.getDisplay(parent).setCurrent(al, parent.getDisplayable());
+	void show() {
+		StringItem si = new StringItem("Ready for search!", null);
+		si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
+		mainScreen.append(si);
+		Display.getDisplay(parent).setCurrent(mainScreen);
 	}
 
 	/**
