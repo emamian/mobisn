@@ -17,7 +17,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private final Command OK_CMD = new Command("Ok", Command.SCREEN, 1);
 
 	/** A list of menu items */
-	private static final String[] elements = { "System Management", "Group Management", "Profile Management" };
+	private static final String[] elements = { "System Management", "Group Management", "Profile Management","Interests" };
 
 	/** value is true after creating the server/client */
 	private boolean isInit = false;
@@ -34,6 +34,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	private Profile profile;
 	private GUIProfile myProfileScreen;
+	private GUIInterests interestsScreen;
 
 	/**
 	 * Constructs main screen of the MIDlet.
@@ -47,9 +48,10 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			profile = new Profile();
 			menu.setTitle(profile.getFullName());
 			myProfileScreen = new GUIProfile(this);
+			interestsScreen = new GUIInterests(this);
 		} catch (Exception e) {
-			e.printStackTrace();
 			System.err.println("could not initialize DemoMidlet.");
+			e.printStackTrace();
 		}
 	}
 
@@ -84,6 +86,10 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			break;
 		case 2:
 			myProfileScreen.show();
+			break;
+
+		case 3:
+			interestsScreen.show();
 			break;
 
 		default:
