@@ -16,7 +16,7 @@ import javax.microedition.lcdui.TextField;
 public class GUIProfile implements CommandListener, ItemCommandListener {
 	MobisnMIDlet parent;
 	Profile profile;
-	private Command PROFILE_BACK_CMD = new Command("Back", Command.BACK, 1);
+	private final Command PROFILE_BACK_CMD = new Command("Back", Command.BACK, 1);
 	private final Command ITEM_EDIT_CMD = new Command("Edit", Command.ITEM, 1);
 	private final Command EDIT_DONE_CMD = new Command("Done", Command.SCREEN, 1);
 	private final Command EDIT_CANCEL_CMD = new Command("Cancel", Command.BACK,
@@ -73,7 +73,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 		items.insertElementAt(item, 1);
 		item = new StringItem("Age: ", profile.getAge());
 		items.insertElementAt(item, 2);
-		item = new StringItem("interests: ", profile.getInterests());
+		item = new StringItem("interests: ", profile.getInterestsString());
 		items.insertElementAt(item, 3);
 		
 		for (int i = 0; i < items.size(); i++) {

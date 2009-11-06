@@ -2,32 +2,31 @@ package edu.ndsu.cs.mobisn;
 import java.util.Vector;
 
 public class Interests {
-	NodeData root;
+	private NodeData root;
 
 	Interests(){
 
-		NodeData head = new NodeData("root");
+		root = new NodeData("Interests");
 		NodeData ch;
 		ch = new NodeData("music");
 		ch.addChild(new NodeData("jazz"));
 		ch.addChild(new NodeData("pop"));
 		ch.addChild(new NodeData("rock"));
 		ch.addChild(new NodeData("metal"));
-		ch.setInterested(true);
-		head.addChild(ch);
+		root.addChild(ch);
 		
 		ch = new NodeData("sports");
 		ch.addChild(new NodeData("basketball"));
 		ch.addChild(new NodeData("football"));
 		ch.addChild(new NodeData("swimming"));
-		head.addChild(ch);
+		ch.setInterested(true);
+		root.addChild(ch);
 		
 		ch = new NodeData("art");
 		ch.addChild(new NodeData("drawing"));
 		ch.addChild(new NodeData("theatre"));
-		head.addChild(ch);
+		root.addChild(ch);
 		
-		this.root = head;
 		setAllDepths();
 	}
 	
@@ -38,7 +37,7 @@ public class Interests {
 		while (!v.isEmpty()) {
 			NodeData g = (NodeData) v.firstElement();
 			v.removeElementAt(0);
-			s += g.getName()+":"+((g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0");//g.name;
+			s += g.getTitle()+":"+((g.isInterested())?String.valueOf(1.0/(double)g.getDepth()):"0");//g.name;
 			for (int i = 0; i < g.getChilds().size(); i++) {
 				v.addElement(g.getChilds().elementAt(i));				
 			}
@@ -50,5 +49,9 @@ public class Interests {
 	
 	public void setAllDepths(){
 		root.setDepth(0);
+	}
+	
+	public NodeData getRoot(){
+		return root;
 	}
 }

@@ -29,10 +29,8 @@ public class GUIMobiClient implements CommandListener {
 	private final Command SCR_IMAGES_BACK_CMD = new Command("Back",
 			Command.BACK, 2);
 
-	/** Start the chosen image download. */
 	private final Command SCR_IMAGES_LOAD_CMD = new Command("Load", Command.OK,
 			1);
-	/** This command goes from image screen to images list one. */
 	private final Command SCR_SHOW_BACK_CMD = new Command("Back", Command.BACK,
 			2);
 

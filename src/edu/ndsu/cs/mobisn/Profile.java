@@ -121,17 +121,18 @@ public class Profile{
 		// imageManager.getJpg(myProfile.getPic()),
 		// ImageItem.LAYOUT_DEFAULT, null);
 		items[0] = new StringItem("name:", name);
-
-		items[1] = new StringItem("family:", family);
-		items[2] = new StringItem("age", age);
 		f.append(items[0]);
+		items[1] = new StringItem("family:", family);
 		f.append(items[1]);
+		items[2] = new StringItem("age", age);
 		f.append(items[2]);
 	}
 
-	public String getInterests() {
+	public String getInterestsString() {
 		return interests.toString();
 	}
 
-	
+	public NodeData getRootInterest(){
+		return interests.getRoot();
+	}
 }
