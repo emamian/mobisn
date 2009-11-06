@@ -60,7 +60,6 @@ public class GUIMobiClient implements CommandListener {
 		listScreen.setCommandListener(this);
 		imageScreen.addCommand(SCR_SHOW_BACK_CMD);
 		imageScreen.setCommandListener(this);
-
 	}
 
 	void completeInitialization(boolean isBTReady) {
