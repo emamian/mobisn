@@ -13,6 +13,8 @@ import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Gauge;
 import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.TextBox;
+import javax.microedition.lcdui.TextField;
 
 public class GUIMobiClient implements CommandListener {
 	/** This command goes to demo main screen. */
@@ -30,10 +32,17 @@ public class GUIMobiClient implements CommandListener {
 	private final Command SCR_IMAGES_BACK_CMD = new Command("Back",
 			Command.BACK, 2);
 
+
 	private final Command SCR_IMAGES_LOAD_CMD = new Command("Load", Command.OK,
 			1);
+	// send sms message.
+	private final Command SCR_IMAGES_SMS_CMD = new Command("Send Text", Command.ITEM, 2);
+
 	private final Command SCR_SHOW_BACK_CMD = new Command("Back", Command.BACK,
 			2);
+	private final Command SMS_SEND_CMD = new Command("Send", Command.SCREEN, 1);
+	private final Command SMS_CANCEL_CMD = new Command("Cancel", Command.BACK,1);
+
 
 	/** The main screen of the client part. */
 	private final Form mainScreen = new Form("Profile Viewer");
@@ -43,6 +52,9 @@ public class GUIMobiClient implements CommandListener {
 
 	/** The screen with download image. */
 	private final Form imageScreen = new Form("Profile Viewer");
+	private Form smsForm = null;
+	TextBox textbox;
+
 
 	/** Keeps the parent MIDlet reference to process specific actions. */
 	private MobisnMIDlet parent;
@@ -57,6 +69,7 @@ public class GUIMobiClient implements CommandListener {
 		bt_client = new BTMobiClient(this);
 		listScreen.addCommand(SCR_IMAGES_BACK_CMD);
 		listScreen.addCommand(SCR_IMAGES_LOAD_CMD);
+		listScreen.addCommand(SCR_IMAGES_SMS_CMD);
 		listScreen.setCommandListener(this);
 		imageScreen.addCommand(SCR_SHOW_BACK_CMD);
 		imageScreen.setCommandListener(this);
@@ -66,7 +79,7 @@ public class GUIMobiClient implements CommandListener {
 	void completeInitialization(boolean isBTReady) {
 		// bluetooth was initialized successfully.
 		if (isBTReady) {
-			StringItem si = new StringItem("Ready for images search!", null);
+			StringItem si = new StringItem("Ready for friend search!", null);
 			si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
 			mainScreen.append(si);
 			Display.getDisplay(parent).setCurrent(mainScreen);
@@ -140,11 +153,35 @@ public class GUIMobiClient implements CommandListener {
 			return;
 		}
 		 // back to client main screen
-        if (c == SCR_SHOW_BACK_CMD) {
+        if (c == SCR_SHOW_BACK_CMD || c == SMS_CANCEL_CMD) {
             Display.getDisplay(parent).setCurrent(listScreen);
 
             return;
         }
+        if(c == SCR_IMAGES_SMS_CMD) {
+        	this.showTextSendForm(true);
+        }
+        if(c == SMS_SEND_CMD){
+        	//TODO capture the text string from the textbox.getString() and send to server selected...
+        	
+        	this.informSearchError("Text Message Sent");
+        }
+	}
+
+	private void showTextSendForm(boolean show) {
+
+		if(textbox == null) {
+			textbox = new TextBox("SMS", "Text message to send", 256,
+					TextField.ANY);
+		}
+		textbox.addCommand(SMS_SEND_CMD);
+		textbox.addCommand(SMS_CANCEL_CMD);
+		textbox.setCommandListener(this);
+
+		//profileScreen.setCommandListener(this);
+		if(show) {
+			Display.getDisplay(parent).setCurrent(textbox);
+		}			
 	}
 
 	/**
