@@ -1,10 +1,13 @@
 package edu.ndsu.cs.mobisn;
 import java.util.Vector;
 
+import javax.microedition.lcdui.Alert;
+import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDlet;
 
@@ -38,24 +41,12 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private GUIProfile myProfileScreen;
 	private GUIInterests interestsScreen;
 
+	private Form loadingForm = new Form("Loading MobiSN");
+
 	/**
 	 * Constructs main screen of the MIDlet.
 	 */
 	public MobisnMIDlet() {
-		try {
-
-			menu.addCommand(EXIT_CMD);
-			menu.addCommand(OK_CMD);
-			menu.setCommandListener(this);
-			profile = new Profile();
-			menu.setTitle(profile.getFullName());
-			myProfileScreen = new GUIProfile(this);
-			interestsScreen = new GUIInterests(this);
-			
-		} catch (Exception e) {
-			System.err.println("could not initialize DemoMidlet.");
-			e.printStackTrace();
-		}
 	}
 
 	/**
@@ -75,17 +66,11 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		}
 		switch (menu.getSelectedIndex()) {
 		case 0:
-			if (mobiServer != null) {
-				mobiServer.destroy();
-			}
-			mobiServer = new GUIMobiServer(this);
-
+			mobiServer.show();
 			break;
 
 		case 1:
-			if(mobiClient != null)
-				mobiClient.destroy();
-			mobiClient = new GUIMobiClient(this);
+			mobiClient.show();
 			break;
 		case 2:
 			try {
@@ -151,14 +136,56 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	 */
 	public void startApp() {
 		try {
-
-			if (!isInit) {
-				show();
-			}
+			init();
+			show();
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.err.println("could not start Midlet (startApp()");
 		}
 	}
 
+	private void init() {
+		try {
+
+			loadingForm.addCommand(EXIT_CMD);
+			loadingForm.setCommandListener(this);
+			loadingForm.append("Loading...");
+			
+			profile = new Profile();
+			try {
+				mobiServer = new  GUIMobiServer(this);
+			} catch (Exception e) {
+				System.err.println("Can't initialize bluetooth server: " + e);
+				e.printStackTrace();
+				showLoadErr("Can't initialize bluetooth server");
+				return;
+			}
+			try {
+				mobiClient = new  GUIMobiClient(this);
+			} catch (Exception e) {
+				System.err.println("Can't initialize bluetooth client: " + e);
+				e.printStackTrace();
+				showLoadErr("Can't initialize bluetooth client");
+				return;
+			}
+			menu.addCommand(EXIT_CMD);
+			menu.addCommand(OK_CMD);
+			menu.setCommandListener(this);
+			menu.setTitle(profile.getFullName());
+			myProfileScreen = new GUIProfile(this);
+			interestsScreen = new GUIInterests(this);
+			
+		} catch (Exception e) {
+			System.err.println("could not initialize DemoMidlet.");
+			e.printStackTrace();
+		}
+		
+	}
+
+		private void showLoadErr(String resMsg) {
+			Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
+			al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
+			loadingForm.append(resMsg);
+			Display.getDisplay(this).setCurrent(al, loadingForm);
+		}
 }

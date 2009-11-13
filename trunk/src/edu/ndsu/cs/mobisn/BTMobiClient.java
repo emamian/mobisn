@@ -1,4 +1,5 @@
 package edu.ndsu.cs.mobisn;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -72,12 +73,24 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	/** Optimization: keeps attributes list to be retrieved. */
 	private int[] attrSet;
 
+	private boolean isBTReady;
+
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
 	 * thread to "avoid dead lock".
+	 * 
+	 * @throws BluetoothStateException
 	 */
-	BTMobiClient(GUIMobiClient parent) {
+	BTMobiClient(GUIMobiClient parent) throws BluetoothStateException {
 		this.parent = parent;
+		isBTReady = false;
+
+		// create/get a local device and discovery agent
+		LocalDevice localDevice = LocalDevice.getLocalDevice();
+		discoveryAgent = localDevice.getDiscoveryAgent();
+
+		// remember we've reached this point.
+		isBTReady = true;
 
 		// we have to initialize a system in different thread...
 		processorThread = new Thread(this);
@@ -88,21 +101,6 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	 * Process the search/download requests.
 	 */
 	public void run() {
-		// initialize bluetooth first
-		boolean isBTReady = false;
-
-		try {
-			// create/get a local device and discovery agent
-			LocalDevice localDevice = LocalDevice.getLocalDevice();
-			discoveryAgent = localDevice.getDiscoveryAgent();
-
-			// remember we've reached this point.
-			isBTReady = true;
-		} catch (Exception e) {
-			System.err.println("Can't initialize bluetooth: " + e);
-		}
-
-		parent.completeInitialization(isBTReady);
 
 		// nothing to do if no bluetooth available
 		if (!isBTReady) {
@@ -225,8 +223,8 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	}
 
 	private Profile loadProfile() {
-		
-		if(!base.containsKey(profileNameToLoad))
+
+		if (!base.containsKey(profileNameToLoad))
 			return null;
 		Vector v = (Vector) base.get(profileNameToLoad);
 		Profile p = (Profile) v.elementAt(0);
@@ -406,11 +404,11 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					de = (DataElement) deEnum.nextElement();
 
 					String name = (String) de.getValue();
-					//System.out.println("name is : " + name);
+					// System.out.println("name is : " + name);
 					int idx = -1;
 					try {
 						idx = name.indexOf(":");
-						//System.out.println("index: " + idx);
+						// System.out.println("index: " + idx);
 
 					} catch (Exception e) {
 						// TODO: handle exception
@@ -424,7 +422,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					}
 					String tag = name.substring(0, idx);
 					String value = name.substring(idx + 1);
-					//System.out.println("result->" + tag + " " + value);
+					// System.out.println("result->" + tag + " " + value);
 					h.put(tag, value);
 				}
 				Profile p = new Profile();
