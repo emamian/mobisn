@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
@@ -48,26 +49,18 @@ public class BTMobiServer implements Runnable {
 	/** Optimization: keeps the table of data elements to be published. */
 	private final Hashtable dataElements = new Hashtable();
 
+	private boolean isBTReady;
+
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
 	 * thread to "avoid dead lock".
+	 * @throws Exception 
 	 */
-	BTMobiServer(GUIMobiServer parent) {
+	BTMobiServer(GUIMobiServer parent) throws Exception {
 		this.parent = parent;
 		this.myProfile = parent.getProfile();
+		isBTReady = false;
 
-		// we have to initialize a system in different thread...
-		accepterThread = new Thread(this);
-		accepterThread.start();
-	}
-
-	/**
-	 * Accepts a new client and send him/her a requested image.
-	 */
-	public void run() {
-		boolean isBTReady = false;
-
-		try {
 			// create/get a local device
 			localDevice = LocalDevice.getLocalDevice();
 
@@ -107,13 +100,17 @@ public class BTMobiServer implements Runnable {
 
 			// remember we've reached this point.
 			isBTReady = true;
-		} catch (Exception e) {
-			System.err.println("Can't initialize bluetooth: " + e);
-			e.printStackTrace();
-		}
 
-		parent.completeInitialization(isBTReady);
+		// we have to initialize a system in different thread...
+		accepterThread = new Thread(this);
+		accepterThread.start();
+	}
 
+	/**
+	 * Accepts a new client and send him/her a requested image.
+	 */
+	public void run() {
+		
 		// nothing to do if no bluetooth available
 		if (!isBTReady) {
 			return;

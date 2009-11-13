@@ -1,8 +1,10 @@
 package edu.ndsu.cs.mobisn;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import javax.bluetooth.BluetoothStateException;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -32,17 +34,17 @@ public class GUIMobiClient implements CommandListener {
 	private final Command SCR_IMAGES_BACK_CMD = new Command("Back",
 			Command.BACK, 2);
 
-
 	private final Command SCR_IMAGES_LOAD_CMD = new Command("Load", Command.OK,
 			1);
 	// send sms message.
-	private final Command SCR_IMAGES_SMS_CMD = new Command("Send Text", Command.ITEM, 2);
+	private final Command SCR_IMAGES_SMS_CMD = new Command("Send Text",
+			Command.ITEM, 2);
 
 	private final Command SCR_SHOW_BACK_CMD = new Command("Back", Command.BACK,
 			2);
 	private final Command SMS_SEND_CMD = new Command("Send", Command.SCREEN, 1);
-	private final Command SMS_CANCEL_CMD = new Command("Cancel", Command.BACK,1);
-
+	private final Command SMS_CANCEL_CMD = new Command("Cancel", Command.BACK,
+			1);
 
 	/** The main screen of the client part. */
 	private final Form mainScreen = new Form("Profile Viewer");
@@ -55,13 +57,12 @@ public class GUIMobiClient implements CommandListener {
 	private Form smsForm = null;
 	TextBox textbox;
 
-
 	/** Keeps the parent MIDlet reference to process specific actions. */
 	private MobisnMIDlet parent;
 
 	private BTMobiClient bt_client;
 
-	GUIMobiClient(MobisnMIDlet parent) {
+	GUIMobiClient(MobisnMIDlet parent) throws BluetoothStateException {
 		this.parent = parent;
 		mainScreen.addCommand(SCR_MAIN_BACK_CMD);
 		mainScreen.addCommand(SCR_MAIN_SEARCH_CMD);
@@ -73,25 +74,13 @@ public class GUIMobiClient implements CommandListener {
 		listScreen.setCommandListener(this);
 		imageScreen.addCommand(SCR_SHOW_BACK_CMD);
 		imageScreen.setCommandListener(this);
-
+		StringItem si = new StringItem("Ready for friend search!", null);
+		si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
+		mainScreen.append(si);
 	}
 
-	void completeInitialization(boolean isBTReady) {
-		// bluetooth was initialized successfully.
-		if (isBTReady) {
-			StringItem si = new StringItem("Ready for friend search!", null);
-			si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
-			mainScreen.append(si);
-			Display.getDisplay(parent).setCurrent(mainScreen);
-
-			return;
-		}
-
-		// something wrong
-		Alert al = new Alert("Error", "Can't initialize bluetooth", null,
-				AlertType.ERROR);
-		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		Display.getDisplay(parent).setCurrent(al, parent.getDisplayable());
+	public void show() {
+		Display.getDisplay(parent).setCurrent(mainScreen);
 	}
 
 	/**
@@ -152,25 +141,26 @@ public class GUIMobiClient implements CommandListener {
 
 			return;
 		}
-		 // back to client main screen
-        if (c == SCR_SHOW_BACK_CMD || c == SMS_CANCEL_CMD) {
-            Display.getDisplay(parent).setCurrent(listScreen);
+		// back to client main screen
+		if (c == SCR_SHOW_BACK_CMD || c == SMS_CANCEL_CMD) {
+			Display.getDisplay(parent).setCurrent(listScreen);
 
-            return;
-        }
-        if(c == SCR_IMAGES_SMS_CMD) {
-        	this.showTextSendForm(true);
-        }
-        if(c == SMS_SEND_CMD){
-        	//TODO capture the text string from the textbox.getString() and send to server selected...
-        	
-        	this.informSearchError("Text Message Sent");
-        }
+			return;
+		}
+		if (c == SCR_IMAGES_SMS_CMD) {
+			this.showTextSendForm(true);
+		}
+		if (c == SMS_SEND_CMD) {
+			// TODO capture the text string from the textbox.getString() and
+			// send to server selected...
+
+			this.informSearchError("Text Message Sent");
+		}
 	}
 
 	private void showTextSendForm(boolean show) {
 
-		if(textbox == null) {
+		if (textbox == null) {
 			textbox = new TextBox("SMS", "Text message to send", 256,
 					TextField.ANY);
 		}
@@ -178,10 +168,10 @@ public class GUIMobiClient implements CommandListener {
 		textbox.addCommand(SMS_CANCEL_CMD);
 		textbox.setCommandListener(this);
 
-		//profileScreen.setCommandListener(this);
-		if(show) {
+		// profileScreen.setCommandListener(this);
+		if (show) {
 			Display.getDisplay(parent).setCurrent(textbox);
-		}			
+		}
 	}
 
 	/**
@@ -221,7 +211,8 @@ public class GUIMobiClient implements CommandListener {
 		while (keys.hasMoreElements()) {
 			String key = (String) keys.nextElement();
 			Profile myProfile = parent.getProfile();
-			String othersInterests = (String)((Vector)base.get(key)).elementAt(2);
+			String othersInterests = (String) ((Vector) base.get(key))
+					.elementAt(2);
 			double relevance;
 			try {
 				relevance = myProfile.getRelevance(othersInterests);
@@ -230,9 +221,9 @@ public class GUIMobiClient implements CommandListener {
 				e.printStackTrace();
 				return false;
 			}
-			if(relevance < -1.0)
+			if (relevance < -1.0)
 				return false;
-			listScreen.append(key+"(relevance:"+relevance+")", null);
+			listScreen.append(key + "(relevance:" + relevance + ")", null);
 		}
 
 		Display.getDisplay(parent).setCurrent(listScreen);
