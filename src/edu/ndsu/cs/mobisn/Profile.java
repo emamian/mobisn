@@ -4,9 +4,12 @@ import java.util.Random;
 import java.util.Vector;
 
 import javax.bluetooth.DataElement;
+import javax.bluetooth.UUID;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.StringItem;
+
+import com.sun.perseus.model.Time;
 
 public class Profile{
 
@@ -147,7 +150,7 @@ public class Profile{
 	}
 	private double cosineAngle(Vector v1 , Vector v2){
 		double nominator = 0.0;
-		System.out.println("relevalnce: "+v1.toString()+" -> "+v2.toString());
+//		System.out.println("relevalnce: "+v1.toString()+" -> "+v2.toString());
 		
 		if(v1.size() != v2.size())
 			return -2.0;
@@ -155,7 +158,7 @@ public class Profile{
 			Double d1 = Double.valueOf(v1.elementAt(i).toString());
 			Double d2 = Double.valueOf(v2.elementAt(i).toString());
 			nominator += d1.doubleValue()*d2.doubleValue();
-			System.out.println(d1+"*"+d2+"->"+nominator);
+//			System.out.println(d1+"*"+d2+"->"+nominator);
 		}
 		double sizes = sizeOfVector(v1)*sizeOfVector(v2);
 		if(sizes == 0.0)
@@ -171,5 +174,9 @@ public class Profile{
 		}
 		size = Math.sqrt(size);
 		return size;
+	}
+	public String getID(){
+		String d = ":";
+		return name+d+family+d+age;
 	}
 }

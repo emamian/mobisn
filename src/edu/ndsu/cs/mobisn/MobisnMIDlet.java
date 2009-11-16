@@ -1,6 +1,10 @@
 package edu.ndsu.cs.mobisn;
+import java.io.IOException;
+import java.util.Hashtable;
 import java.util.Vector;
 
+import javax.bluetooth.RemoteDevice;
+import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -10,6 +14,7 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDlet;
+
 
 public class MobisnMIDlet extends MIDlet implements CommandListener {
 	/** The messages are shown in this demo this amount of time. */
@@ -23,9 +28,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	/** A list of menu items */
 	private static final String[] elements = { "System Management", "Group Management", "Profile Management","Interests" };
-
-	/** value is true after creating the server/client */
-	private boolean isInit = false;
 
 	/** A menu list instance */
 	private final List menu = new List("MobiSN Demo", List.IMPLICIT, elements,
@@ -43,10 +45,14 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	private Form loadingForm = new Form("Loading MobiSN");
 
+	private Hashtable base = new Hashtable();
+//	private static final Logger logger = Logger.getLogger("BTMobiClient");
 	/**
 	 * Constructs main screen of the MIDlet.
 	 */
 	public MobisnMIDlet() {
+//		BasicConfigurator.configure();
+//		logger.info("salam");
 	}
 
 	/**
@@ -92,7 +98,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			break;
 		}
 
-		isInit = true;
 	}
 
 	/**
@@ -175,6 +180,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			myProfileScreen = new GUIProfile(this);
 			interestsScreen = new GUIInterests(this);
 			
+			menu.setSelectedIndex(1, true);
+			
 		} catch (Exception e) {
 			System.err.println("could not initialize DemoMidlet.");
 			e.printStackTrace();
@@ -187,5 +194,23 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
 			loadingForm.append(resMsg);
 			Display.getDisplay(this).setCurrent(al, loadingForm);
+		}
+
+		public void receivedNewSMS(String sms, StreamConnection conn) {
+			// TODO Auto-generated method stub
+			System.out.println("received sms :"+sms );
+			try {
+				System.out.println(RemoteDevice.getRemoteDevice(conn).getBluetoothAddress());
+				System.out.println(RemoteDevice.getRemoteDevice(conn).getFriendlyName(true));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+
+		public Hashtable getBase() {
+			// TODO Auto-generated method stub
+			return base;
 		}
 }
