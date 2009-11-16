@@ -1,6 +1,7 @@
 package edu.ndsu.cs.mobisn;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -17,6 +18,7 @@ import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
+import javax.microedition.lcdui.Image;
 
 public class BTMobiClient implements Runnable, DiscoveryListener {
 	/** Describes this server */
@@ -294,12 +296,14 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					+ profileKeyToLoad);
 			return false;
 		}
-		if (!loadFriendImage(p, sr)) {
+		Image img = null;
+		if ((img =loadFriendImage(p, sr))== null) {
 			parent.informLoadError("Can't load profile image, key: "
 					+ profileKeyToLoad);
 			return false;
 
 		}
+		p.setImage(img);
 
 		// ok, show profile to user
 		parent.showFriendProfile(p, profileKeyToLoad);
@@ -308,13 +312,13 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		return true;
 	}
 
-	private boolean loadFriendImage(Profile p, ServiceRecord sr) {
+	private Image loadFriendImage(Profile p, ServiceRecord sr) {
 		StreamConnection conn = null;
 		String url = null;
 
 		// the process may be canceled
 		if (isDownloadCanceled) {
-			return false;
+			return null;
 		}
 
 		// first - connect
@@ -326,7 +330,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			System.err.println("Note: can't connect to: " + url);
 
 			// ignore
-			return false;
+			return null;
 		}
 
 		// then open a steam and write a name
@@ -345,42 +349,63 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 				System.out.println("error in closing connection");
 				ee.printStackTrace();
 			} // ignore
-			return false;
+			return null;
 		}
-		/*
-		 * // then open a steam and read an image byte[] imgData = null;
-		 * 
-		 * try { InputStream in = conn.openInputStream();
-		 * 
-		 * // read a length first int length = in.read() << 8; length |=
-		 * in.read();
-		 * 
-		 * if (length <= 0) { throw new IOException("Can't read a length"); }
-		 * 
-		 * // read the image now imgData = new byte[length]; length = 0;
-		 * 
-		 * while (length != imgData.length) { int n = in.read(imgData, length,
-		 * imgData.length - length);
-		 * 
-		 * if (n == -1) { throw new IOException("Can't read a image data"); }
-		 * 
-		 * length += n; }
-		 * 
-		 * in.close(); } catch (IOException e) {
-		 * System.err.println("Can't read from server for: " + url);
-		 * 
-		 * continue; } finally { // close stream connection anyway try {
-		 * conn.close(); } catch (IOException e) { } // ignore }
-		 * 
-		 * // ok, may it's a chance Image img = null;
-		 * 
-		 * try { img = Image.createImage(imgData, 0, imgData.length); } catch
-		 * (Exception e) { // may be next time
-		 * System.err.println("Error: wrong image data from: " + url);
-		 * 
-		 * continue; }
-		 */
-		return true;
+		
+		// then open a steam and read an image
+        byte[] imgData = null;
+
+        try {
+            InputStream in = conn.openInputStream();
+            System.out.println("made input sream");
+            // read a length first
+            int length = in.read() << 8;
+            length |= in.read();
+
+            System.out.println("length is :"+length);
+            if (length <= 0) {
+                throw new IOException("Can't read a length");
+            }
+
+            // read the image now
+            imgData = new byte[length];
+            int lengthRead = 0;
+
+            while (lengthRead != imgData.length) {
+                int n = in.read(imgData, lengthRead, imgData.length - lengthRead);
+
+                if (n == -1) {
+                    throw new IOException("Can't read a image data");
+                }
+
+                lengthRead += n;
+                System.out.println("lengthRead is "+lengthRead);
+            }
+
+            in.close();
+        } catch (IOException e) {
+            System.err.println("Can't read from server for: " + url);
+            return null;
+        } finally {
+            // close stream connection anyway
+            try {
+                conn.close();
+            } catch (IOException e) {
+            } // ignore
+        }
+
+        // ok, may it's a chance
+        Image img = null;
+
+        try {
+            img = Image.createImage(imgData, 0, imgData.length);
+        } catch (Exception e) {
+            // may be next time
+            System.err.println("Error: wrong image data from: " + url);
+
+            return null;
+        }
+		return img;
 	}
 
 	private Profile loadProfileFromBase() {
@@ -578,7 +603,6 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 						// System.out.println("index: " + idx);
 
 					} catch (Exception e) {
-						// TODO: handle exception
 						System.err.println("error in tag :" + name);
 						e.printStackTrace();
 						continue;
@@ -599,17 +623,10 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 				}
 				FriendWrapper fw = new FriendWrapper(true, p, sr, (String) h
 						.get("interests"));
-				if(base.containsKey(fw.getKey())){
+				if (base.containsKey(fw.getKey())) {
 					base.remove(fw.getKey());
 				}
 				base.put(fw.getKey(), fw);
-				/*
-				 * 
-				 * Vector v = friendPropertiesVector(p, sr, (String) h
-				 * .get("interests"));
-				 * base.put(sr.getHostDevice().getBluetoothAddress(), v);
-				 * base.put(p.getID(), v);
-				 */
 			}
 
 			return parent.showFriendsNames(base);
@@ -617,18 +634,6 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			e.printStackTrace();
 			return false;
 		}
-	}
-
-	// profile 0
-	// service record 1
-	// interests 2
-	private Vector friendPropertiesVector(Profile prof, ServiceRecord sr,
-			String interests) {
-		Vector v = new Vector(3);
-		v.insertElementAt(prof, 0);
-		v.insertElementAt(sr, 1);
-		v.insertElementAt(interests, 2);
-		return v;
 	}
 
 	/** Cancel's the devices/services search. */
@@ -724,7 +729,6 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			}
 
 		} catch (Exception e) {
-			// TODO: handle exception
 			e.printStackTrace();
 		}
 	}

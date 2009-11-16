@@ -1,9 +1,4 @@
 package edu.ndsu.cs.mobisn;
-import java.io.IOException;
-
-import javax.bluetooth.BluetoothStateException;
-import javax.bluetooth.DataElement;
-import javax.bluetooth.RemoteDevice;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -28,9 +23,6 @@ public class GUIMobiServer implements CommandListener {
 	/** Adds the selected image to the published list. */
 	private final Command publishProfileCommand = new Command(
 			"Publish profile", Command.SCREEN, 1);
-
-	/** shows profile is online and viewable by others */
-	private boolean isProfilePublished = false;
 
 	/** Removes the selected image from the published list. */
 	private final Command removeCommand = new Command("Remove profile",
@@ -86,7 +78,6 @@ public class GUIMobiServer implements CommandListener {
 			Display.getDisplay(parent).setCurrent(al, serverConfigurationList);
 			return;
 		}
-		isProfilePublished = isPublished;
 		if(isPublished){
 			serverConfigurationList.removeCommand(publishProfileCommand);
 			serverConfigurationList.addCommand(removeCommand);
@@ -160,5 +151,17 @@ public class GUIMobiServer implements CommandListener {
 	public void receivedNewSMS(String sms, StreamConnection conn) {
 		// TODO Auto-generated method stub
 		parent.receivedNewSMS(sms,conn);
+	}
+
+	public boolean isProfileOnline() {
+		return bt_server.isProfileOnline();
+	}
+
+	public void rePublish() {
+		if(bt_server.isProfileOnline()){
+			bt_server.publishProfile(true);
+			System.out.println("profile republished");
+		}
+		
 	}
 }

@@ -38,8 +38,12 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 			return;
 		}
 		if (c == EDIT_DONE_CMD) {
-			setProfileProp(textbox.getString());
-			System.out.println("set profile done");
+			if(setProfileProp(textbox.getString())){
+				parent.rePublishProfile();
+				System.out.println("set profile done");
+			}
+			else
+				System.out.println("could not set profile");
 			show();
 			return;
 		}
@@ -67,14 +71,16 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 	private void loadProfileData() {
 		items.removeAllElements();
 		Item item;
-		item = new StringItem("Name: ", profile.getName());
+		item = new ImageItem("Image: ", profile.getImage(),ImageItem.LAYOUT_DEFAULT,profile.getName());
 		items.insertElementAt(item, 0);
-		item = new StringItem("Family: ", profile.getFamily());
+		item = new StringItem("Name: ", profile.getName());
 		items.insertElementAt(item, 1);
-		item = new StringItem("Age: ", profile.getAge());
+		item = new StringItem("Family: ", profile.getFamily());
 		items.insertElementAt(item, 2);
-		item = new StringItem("interests: ", profile.getInterestsVectorString());
+		item = new StringItem("Age: ", profile.getAge());
 		items.insertElementAt(item, 3);
+		item = new StringItem("interests: ", profile.getInterestsVectorString());
+		items.insertElementAt(item, 4);
 		
 		for (int i = 0; i < items.size(); i++) {
 			Item t = (Item) items.elementAt(i);
@@ -87,6 +93,8 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 		if (c == ITEM_EDIT_CMD) {
 			try {
 				int idx = items.indexOf(item);
+				if(idx==0) // image 
+					return;
 				currentEdit = idx;
 				showTextBox(item, idx);
 
@@ -111,10 +119,12 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 	private String getProfileProp(int i) {
 		switch (i) {
 		case 0:
-			return profile.getName();
+			return "image";
 		case 1:
-			return profile.getFamily();
+			return profile.getName();
 		case 2:
+			return profile.getFamily();
+		case 3:
 			return profile.getAge();
 
 		default:
@@ -125,13 +135,13 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 	private boolean setProfileProp(String s) {
 		System.out.println(s);
 		switch (currentEdit) {
-		case 0:
+		case 1:
 			profile.setName(s);
 			return true;
-		case 1:
+		case 2:
 			profile.setFamily(s);
 			return true;
-		case 2:
+		case 3:
 			profile.setAge(s);
 			return true;
 

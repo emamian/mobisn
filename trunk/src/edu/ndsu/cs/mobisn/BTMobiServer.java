@@ -1,23 +1,20 @@
 package edu.ndsu.cs.mobisn;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
+import java.io.OutputStream;
 import java.util.Vector;
 
-import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
-import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.ServiceRegistrationException;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
-
-import com.sun.kvem.jsr082.bluetooth.ServiceRecordImpl;
 
 public class BTMobiServer implements Runnable {
 
@@ -51,10 +48,13 @@ public class BTMobiServer implements Runnable {
 	/** Process the particular client from queue. */
 	private ClientProcessor processor;
 
-	/** Optimization: keeps the table of data elements to be published. */
-	private final Hashtable dataElements = new Hashtable();
-
 	private boolean isBTReady;
+
+	private boolean profileOnline = false;
+
+	public boolean isProfileOnline() {
+		return profileOnline;
+	}
 
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
@@ -131,7 +131,7 @@ public class BTMobiServer implements Runnable {
 
 			try {
 				conn = notifier.acceptAndOpen();
-				System.out.println("new conneccion: "+conn.toString());
+				System.out.println("new conneccion: " + conn.toString());
 			} catch (IOException e) {
 				// wrong client or interrupted - continue anyway
 				continue;
@@ -156,7 +156,7 @@ public class BTMobiServer implements Runnable {
 			switch (cmd) {
 			case 1: // send profile image
 				System.out.println("server command 1: send image");
-				sendMyProfileImage(in);
+				sendMyProfileImage(conn);
 				break;
 			case 2: // get SMS
 				System.out.println("server command 2: receive sms");
@@ -167,13 +167,22 @@ public class BTMobiServer implements Runnable {
 
 			}
 		} catch (IOException e) {
+			System.err.println("error in accepting command ");
 			System.err.println(e);
+			e.printStackTrace();
 		}
 
 		// close input stream anyway
 		if (in != null) {
 			try {
 				in.close();
+			} catch (IOException e) {
+			} // ignore
+		}
+		// close input stream anyway
+		if (conn != null) {
+			try {
+				conn.close();
 			} catch (IOException e) {
 			} // ignore
 		}
@@ -212,10 +221,71 @@ public class BTMobiServer implements Runnable {
 		return SMS;
 	}
 
-	private void sendMyProfileImage(InputStream in) {
-		// TODO Auto-generated method stub
+	private void sendMyProfileImage(StreamConnection conn) {
 		System.out.println("sending profile image");
+		byte[] imgData = getImageData(parent.getProfile().getImagePath());
+		System.out.println("imagepath: "+parent.getProfile().getImagePath()+" imagedata length : "+imgData.length);
+		sendImageData(imgData, conn);
 
+	}
+
+	/** Send image data. */
+	private void sendImageData(byte[] imgData, StreamConnection conn) {
+		if (imgData == null) {
+			return;
+		}
+
+		OutputStream out = null;
+
+		try {
+			out = conn.openOutputStream();
+			out.write(imgData.length >> 8);
+			out.write(imgData.length & 0xff);
+			out.write(imgData);
+			out.flush();
+		} catch (IOException e) {
+			System.err.println("Can't send image data: " + e);
+		}
+
+		// close output stream anyway
+		if (out != null) {
+			try {
+				out.close();
+			} catch (IOException e) {
+			} // ignore
+		}
+	}
+
+	/** Reads images data from MIDlet archive to array. */
+	private byte[] getImageData(String imgName) {
+		if (imgName == null) {
+			return null;
+		}
+
+		InputStream in = getClass().getResourceAsStream(imgName);
+
+		// read image data and create a byte array
+		byte[] buff = new byte[1024];
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+
+		try {
+			while (true) {
+				int length = in.read(buff);
+
+				if (length == -1) {
+					break;
+				}
+
+				baos.write(buff, 0, length);
+			}
+		} catch (IOException e) {
+			System.err.println("Can't get image data: imgName=" + imgName
+					+ " :" + e);
+
+			return null;
+		}
+
+		return baos.toByteArray();
 	}
 
 	/**
@@ -308,6 +378,9 @@ public class BTMobiServer implements Runnable {
 
 		record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, de);
 
+		if(isPublished)
+			System.out.println("profile online "+myProfile.getFamily());
+		profileOnline  = isPublished;
 		try {
 			localDevice.updateRecord(record);
 		} catch (ServiceRegistrationException e) {
