@@ -31,17 +31,18 @@ public class GUIMobiClient implements CommandListener {
 			Command.BACK, 2);
 
 	/** This command goes to client main screen. */
-	private final Command SCR_IMAGES_BACK_CMD = new Command("Back",
+	private final Command SCR_PROFILES_BACK_CMD = new Command("Back",
 			Command.BACK, 2);
 
-	private final Command SCR_IMAGES_LOAD_CMD = new Command("Load", Command.OK,
-			1);
-	// send sms message.
-	private final Command SCR_IMAGES_SMS_CMD = new Command("Send Text",
-			Command.ITEM, 2);
+	private final Command SCR_PROFILES_LOAD_CMD = new Command("Load",
+			Command.OK, 1);
 
 	private final Command SCR_SHOW_BACK_CMD = new Command("Back", Command.BACK,
 			2);
+
+	// send sms message.
+	private final Command SCR_PROFILES_SMS_CMD = new Command("Send Text",
+			Command.ITEM, 2);
 	private final Command SMS_SEND_CMD = new Command("Send", Command.SCREEN, 1);
 	private final Command SMS_CANCEL_CMD = new Command("Cancel", Command.BACK,
 			1);
@@ -53,14 +54,17 @@ public class GUIMobiClient implements CommandListener {
 	private final List listScreen = new List("Profile Viewer", List.IMPLICIT);
 
 	/** The screen with download image. */
-	private final Form imageScreen = new Form("Profile Viewer");
-	private Form smsForm = null;
-	TextBox textbox;
+	private final Form friendDetailScreen = new Form("Profile Viewer");
+
+	// sms textbox
+	private TextBox smsBox = null;
 
 	/** Keeps the parent MIDlet reference to process specific actions. */
 	private MobisnMIDlet parent;
 
 	private BTMobiClient bt_client;
+
+	private Vector listScreenKeys = new Vector();
 
 	GUIMobiClient(MobisnMIDlet parent) throws BluetoothStateException {
 		this.parent = parent;
@@ -68,15 +72,21 @@ public class GUIMobiClient implements CommandListener {
 		mainScreen.addCommand(SCR_MAIN_SEARCH_CMD);
 		mainScreen.setCommandListener(this);
 		bt_client = new BTMobiClient(this);
-		listScreen.addCommand(SCR_IMAGES_BACK_CMD);
-		listScreen.addCommand(SCR_IMAGES_LOAD_CMD);
-		listScreen.addCommand(SCR_IMAGES_SMS_CMD);
+		listScreen.addCommand(SCR_PROFILES_BACK_CMD);
+		listScreen.addCommand(SCR_PROFILES_LOAD_CMD);
+		listScreen.addCommand(SCR_PROFILES_SMS_CMD);
 		listScreen.setCommandListener(this);
-		imageScreen.addCommand(SCR_SHOW_BACK_CMD);
-		imageScreen.setCommandListener(this);
+		friendDetailScreen.addCommand(SCR_SHOW_BACK_CMD);
+		friendDetailScreen.setCommandListener(this);
 		StringItem si = new StringItem("Ready for friend search!", null);
 		si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
 		mainScreen.append(si);
+
+		smsBox = new TextBox("SMS", "Text message to send", 256, TextField.ANY);
+		smsBox.addCommand(SMS_SEND_CMD);
+		smsBox.addCommand(SMS_CANCEL_CMD);
+		smsBox.setCommandListener(this);
+
 	}
 
 	public void show() {
@@ -94,13 +104,12 @@ public class GUIMobiClient implements CommandListener {
 	public void commandAction(Command c, Displayable d) {
 		// back to demo main screen
 		if (c == SCR_MAIN_BACK_CMD) {
-			destroy();
 			parent.show();
 
 			return;
 		}
 
-		// starts images (device/services) search
+		// starts (device/services) search
 		if (c == SCR_MAIN_SEARCH_CMD) {
 			Form f = new Form("Searching...");
 			f.addCommand(SCR_SEARCH_CANCEL_CMD);
@@ -121,14 +130,14 @@ public class GUIMobiClient implements CommandListener {
 			return;
 		}
 		// back to client main screen
-		if (c == SCR_IMAGES_BACK_CMD) {
+		if (c == SCR_PROFILES_BACK_CMD) {
 			bt_client.requestLoad(null);
 			Display.getDisplay(parent).setCurrent(mainScreen);
 
 			return;
 		}
 		// starts image download
-		if (c == SCR_IMAGES_LOAD_CMD) {
+		if (c == SCR_PROFILES_LOAD_CMD) {
 			Form f = new Form("Loading...");
 			// f.addCommand(SCR_LOAD_CANCEL_CMD);
 			f.setCommandListener(this);
@@ -137,7 +146,16 @@ public class GUIMobiClient implements CommandListener {
 			Display.getDisplay(parent).setCurrent(f);
 
 			List l = (List) d;
-			bt_client.requestLoad(l.getString(l.getSelectedIndex()));
+			try {
+				String friendKey = (String) listScreenKeys.elementAt(l
+						.getSelectedIndex());
+				bt_client.requestLoad(friendKey);
+
+			} catch (Exception e) {
+				System.err
+						.println("index of selected friend out of bound of listScreenKeys");
+				e.printStackTrace();
+			}
 
 			return;
 		}
@@ -147,40 +165,50 @@ public class GUIMobiClient implements CommandListener {
 
 			return;
 		}
-		if (c == SCR_IMAGES_SMS_CMD) {
+		if (c == SCR_PROFILES_SMS_CMD) {
 			this.showTextSendForm(true);
+			return;
 		}
+
 		if (c == SMS_SEND_CMD) {
+			System.out.println("trying to send sms");
 			// TODO capture the text string from the textbox.getString() and
 			// send to server selected...
+			Form f = new Form("Sending SMS...");
+			// f.addCommand(SCR_LOAD_CANCEL_CMD);
+			f.setCommandListener(this);
+			f.append(new Gauge("Sending SMS  ...", false, Gauge.INDEFINITE,
+					Gauge.CONTINUOUS_RUNNING));
+			Display.getDisplay(parent).setCurrent(f);
+			List l = listScreen;
+			try {
+				String friendKey = (String) listScreenKeys.elementAt(l
+						.getSelectedIndex());
+				String sms = smsBox.getString();
+				System.out.println("sms is: " + sms);
+				bt_client.sendSMS(sms, friendKey);
 
-			this.informSearchError("Text Message Sent");
+			} catch (Exception e) {
+				System.err
+						.println("sms: index of selected friend out of bound of listScreenKeys");
+				e.printStackTrace();
+			}
+			Display.getDisplay(parent).setCurrent(listScreen);
+			return;
 		}
 	}
 
 	private void showTextSendForm(boolean show) {
-
-		if (textbox == null) {
-			textbox = new TextBox("SMS", "Text message to send", 256,
-					TextField.ANY);
-		}
-		textbox.addCommand(SMS_SEND_CMD);
-		textbox.addCommand(SMS_CANCEL_CMD);
-		textbox.setCommandListener(this);
-
-		// profileScreen.setCommandListener(this);
 		if (show) {
-			Display.getDisplay(parent).setCurrent(textbox);
+			Display.getDisplay(parent).setCurrent(smsBox);
 		}
 	}
 
 	/**
-	 * Informs the error during the images search.
+	 * Informs the error during the profile search.
 	 */
 	void informSearchError(String resMsg) {
-		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
-		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		Display.getDisplay(parent).setCurrent(al, mainScreen);
+		showAlertGoTo(resMsg, mainScreen);
 	}
 
 	public void destroy() {
@@ -189,16 +217,16 @@ public class GUIMobiClient implements CommandListener {
 	}
 
 	/**
-	 * Shows the available images names.
+	 * Shows the available profile names.
 	 * 
-	 * @returns false if no images names were found actually
+	 * @returns false if no profile names were found actually
 	 */
-	boolean showImagesNames(Hashtable base) {
+	boolean showFriendsNames(Hashtable base) {
 		Enumeration keys = base.keys();
 
 		// no images actually
 		if (!keys.hasMoreElements()) {
-			informSearchError("No profile names in found services");
+			informSearchError("No profiles found");
 
 			return false;
 		}
@@ -207,12 +235,12 @@ public class GUIMobiClient implements CommandListener {
 		while (listScreen.size() != 0) {
 			listScreen.delete(0);
 		}
-
+		listScreenKeys.removeAllElements();
 		while (keys.hasMoreElements()) {
 			String key = (String) keys.nextElement();
 			Profile myProfile = parent.getProfile();
-			String othersInterests = (String) ((Vector) base.get(key))
-					.elementAt(2);
+			String othersInterests = (String) ((FriendWrapper) base.get(key))
+					.getInterests();
 			double relevance;
 			try {
 				relevance = myProfile.getRelevance(othersInterests);
@@ -223,9 +251,18 @@ public class GUIMobiClient implements CommandListener {
 			}
 			if (relevance < -1.0)
 				return false;
-			listScreen.append(key + "(relevance:" + relevance + ")", null);
+			Profile friend = (Profile) ((FriendWrapper) base.get(key)).getProfile();
+
+			listScreenKeys.addElement(key);
+			listScreen.append(friend.getFullName() + "(relevance:" + relevance
+					+ ")", null);
 		}
 
+		if (listScreen.size() != listScreenKeys.size()) {
+			System.err
+					.println("list of friends' profiles in screen and keys don't match");
+			return false;
+		}
 		Display.getDisplay(parent).setCurrent(listScreen);
 
 		return true;
@@ -235,18 +272,26 @@ public class GUIMobiClient implements CommandListener {
 	 * Informs the error during the selected image load.
 	 */
 	void informLoadError(String resMsg) {
-		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
+		showAlertGoTo(resMsg, listScreen);
+	}
+
+	private void showAlertGoTo(String Msg, Displayable destination) {
+		Alert al = new Alert("Error", Msg, null, AlertType.ERROR);
 		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		Display.getDisplay(parent).setCurrent(al, listScreen);
+		Display.getDisplay(parent).setCurrent(al, destination);
 	}
 
 	/**
 	 * Shows the downloaded image.
 	 */
-	void showProfile(Profile p, String pName) {
-		imageScreen.deleteAll();
-		p.showIn(imageScreen);
-		Display.getDisplay(parent).setCurrent(imageScreen);
+	void showFriendProfile(Profile p, String pName) {
+		friendDetailScreen.deleteAll();
+		p.showIn(friendDetailScreen);
+		Display.getDisplay(parent).setCurrent(friendDetailScreen);
 
+	}
+
+	public Hashtable getBase() {
+		return parent.getBase();
 	}
 }

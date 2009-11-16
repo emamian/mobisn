@@ -1,6 +1,10 @@
 package edu.ndsu.cs.mobisn;
+import java.io.IOException;
+
 import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DataElement;
+import javax.bluetooth.RemoteDevice;
+import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -25,6 +29,9 @@ public class GUIMobiServer implements CommandListener {
 	private final Command publishProfileCommand = new Command(
 			"Publish profile", Command.SCREEN, 1);
 
+	/** shows profile is online and viewable by others */
+	private boolean isProfilePublished = false;
+
 	/** Removes the selected image from the published list. */
 	private final Command removeCommand = new Command("Remove profile",
 			Command.SCREEN, 1);
@@ -33,7 +40,7 @@ public class GUIMobiServer implements CommandListener {
 	private final Command helpCommand = new Command("Help", Command.HELP, 1);
 
 	/** The list control to configure images. */
-	private final List imagesList = new List("Configure Server", List.IMPLICIT);
+	private final List serverConfigurationList = new List("Configure Server", List.IMPLICIT);
 
 	/** The help screen for the server. */
 	private final Alert helpScreen = new Alert("Help");
@@ -44,8 +51,6 @@ public class GUIMobiServer implements CommandListener {
 	/** This object handles the real transmission. */
 	private BTMobiServer bt_server;
 
-	/** shows profile is online and viewable by others */
-	private boolean isProfilePublished = false;
 
 	private Profile profile;
 
@@ -56,12 +61,11 @@ public class GUIMobiServer implements CommandListener {
 		bt_server = new BTMobiServer(this);
 
 		// prepare main screen
-		imagesList.addCommand(backCommand);
-		imagesList.addCommand(publishProfileCommand);
-		imagesList.addCommand(removeCommand);
-		imagesList.addCommand(helpCommand);
-		setProfileOnlineMessage(false);
-		imagesList.setCommandListener(this);
+		serverConfigurationList.addCommand(backCommand);
+		serverConfigurationList.addCommand(helpCommand);
+		serverConfigurationList.setCommandListener(this);
+
+		publishProfile(true);
 
 		// prepare help screen
 		helpScreen.addCommand(backCommand);
@@ -69,11 +73,33 @@ public class GUIMobiServer implements CommandListener {
 		helpScreen.setString(helpText);
 		helpScreen.setCommandListener(this);
 		Ticker t = new Ticker("Change your online status!");
-		imagesList.setTicker(t);
+		serverConfigurationList.setTicker(t);
+	}
+
+	private void publishProfile(boolean isPublished) {
+		if (!bt_server.publishProfile(isPublished)) {
+			// either a bad record or SDDB is busy
+			Alert al = new Alert("Error",
+					"Can't update base ("+(isPublished?"publish":"remove")+" profile)", null,
+					AlertType.ERROR);
+			al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
+			Display.getDisplay(parent).setCurrent(al, serverConfigurationList);
+			return;
+		}
+		isProfilePublished = isPublished;
+		if(isPublished){
+			serverConfigurationList.removeCommand(publishProfileCommand);
+			serverConfigurationList.addCommand(removeCommand);
+		}else{
+			serverConfigurationList.removeCommand(removeCommand);
+			serverConfigurationList.addCommand(publishProfileCommand);
+		}
+		setProfileOnlineMessage(isPublished);
+		System.out.println("profile is "+(isPublished?"published":"removed"));
 	}
 
 	public void show(){
-		Display.getDisplay(parent).setCurrent(imagesList);
+		Display.getDisplay(parent).setCurrent(serverConfigurationList);
 	}
 	/**
 	 * Process the command event.
@@ -84,15 +110,13 @@ public class GUIMobiServer implements CommandListener {
 	 *            - the screen object the command was issued for.
 	 */
 	public void commandAction(Command c, Displayable d) {
-		if ((c == backCommand) && (d == imagesList)) {
-			destroy();
+		if ((c == backCommand) && (d == serverConfigurationList)) {
 			parent.show();
-
 			return;
 		}
 
 		if ((c == backCommand) && (d == helpScreen)) {
-			Display.getDisplay(parent).setCurrent(imagesList);
+			Display.getDisplay(parent).setCurrent(serverConfigurationList);
 
 			return;
 		}
@@ -104,38 +128,17 @@ public class GUIMobiServer implements CommandListener {
 		}
 
 		if (c == publishProfileCommand) {
-			if (!bt_server.publishProfile(true)) {
-				// either a bad record or SDDB is busy
-				Alert al = new Alert("Error",
-						"Can't update base (publish profile)", null,
-						AlertType.ERROR);
-				al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-				Display.getDisplay(parent).setCurrent(al, imagesList);
-				return;
-			}
-			setProfileOnlineMessage(true);
-			isProfilePublished = true;
+			publishProfile(true);
 			return;
 		}
 		if (c == removeCommand) {
-			if (!bt_server.publishProfile(false)) {
-				// either a bad record or SDDB is busy
-				Alert al = new Alert("Error",
-						"Can't update base (publish profile)", null,
-						AlertType.ERROR);
-				al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-				Display.getDisplay(parent).setCurrent(al, imagesList);
-				return;
-			}
-			setProfileOnlineMessage(false);
-			isProfilePublished = false;
+			publishProfile(false);
 			return;
 		}
 
 	}
 
 	public void destroy() {
-		// TODO Auto-generated method stub
 		// destroy the running thread of bt_server
 		// i.e. finalize the bluetooth server work
 		 bt_server.destroy();
@@ -146,11 +149,16 @@ public class GUIMobiServer implements CommandListener {
 	}
 
 	private void setProfileOnlineMessage(boolean isOnline) {
-		imagesList.deleteAll();
+		serverConfigurationList.deleteAll();
 		if (isOnline) {
-			imagesList.append("your profile is online!", null);
+			serverConfigurationList.append("your profile is online!", null);
 		} else {
-			imagesList.append("your profile is offline!", null);
+			serverConfigurationList.append("your profile is offline!", null);
 		}
+	}
+
+	public void receivedNewSMS(String sms, StreamConnection conn) {
+		// TODO Auto-generated method stub
+		parent.receivedNewSMS(sms,conn);
 	}
 }

@@ -1,5 +1,7 @@
 package edu.ndsu.cs.mobisn;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -7,12 +9,15 @@ import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.LocalDevice;
+import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.ServiceRegistrationException;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.StreamConnectionNotifier;
+
+import com.sun.kvem.jsr082.bluetooth.ServiceRecordImpl;
 
 public class BTMobiServer implements Runnable {
 
@@ -54,52 +59,53 @@ public class BTMobiServer implements Runnable {
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
 	 * thread to "avoid dead lock".
-	 * @throws Exception 
+	 * 
+	 * @throws Exception
 	 */
 	BTMobiServer(GUIMobiServer parent) throws Exception {
 		this.parent = parent;
 		this.myProfile = parent.getProfile();
 		isBTReady = false;
 
-			// create/get a local device
-			localDevice = LocalDevice.getLocalDevice();
+		// create/get a local device
+		localDevice = LocalDevice.getLocalDevice();
 
-			// set we are discoverable
-			if (!localDevice.setDiscoverable(DiscoveryAgent.GIAC)) {
-				// Some implementations always return false, even if
-				// setDiscoverable successful
-				// throw new IOException("Can't set discoverable mode...");
-			}
+		// set we are discoverable
+		if (!localDevice.setDiscoverable(DiscoveryAgent.GIAC)) {
+			// Some implementations always return false, even if
+			// setDiscoverable successful
+			throw new IOException("Can't set discoverable mode...");
+		}
 
-			// prepare a URL to create a notifier
-			StringBuffer url = new StringBuffer("btspp://");
+		// prepare a URL to create a notifier
+		StringBuffer url = new StringBuffer("btspp://");
 
-			// indicate this is a server
-			url.append("localhost").append(':');
+		// indicate this is a server
+		url.append("localhost").append(':');
 
-			// add the UUID to identify this service
-			url.append(MOBISN_SERVER_UUID.toString());
+		// add the UUID to identify this service
+		url.append(MOBISN_SERVER_UUID.toString());
 
-			// add the name for our service
-			url.append(";name=MobiSN Server");
+		// add the name for our service
+		url.append(";name=MobiSN Server");
 
-			// request all of the client not to be authorized
-			// some devices fail on authorize=true
-			url.append(";authorize=false");
+		// request all of the client not to be authorized
+		// some devices fail on authorize=true
+		url.append(";authorize=false");
 
-			// create notifier now
-			notifier = (StreamConnectionNotifier) Connector
-					.open(url.toString());
+		// create notifier now
+		notifier = (StreamConnectionNotifier) Connector.open(url.toString());
 
-			// and remember the service record for the later updates
-			record = localDevice.getRecord(notifier);
+		// and remember the service record for the later updates
+		record = localDevice.getRecord(notifier);
 
-			// create a special attribute with images names
-			DataElement base = new DataElement(DataElement.DATSEQ);
-			record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, base);
+		// create a special attribute with images names
+		DataElement base = new DataElement(DataElement.DATSEQ);
+		record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, base);
 
-			// remember we've reached this point.
-			isBTReady = true;
+		// remember we've reached this point.
+		isBTReady = true;
+		System.out.println("BTServer initialized");
 
 		// we have to initialize a system in different thread...
 		accepterThread = new Thread(this);
@@ -110,7 +116,7 @@ public class BTMobiServer implements Runnable {
 	 * Accepts a new client and send him/her a requested image.
 	 */
 	public void run() {
-		
+
 		// nothing to do if no bluetooth available
 		if (!isBTReady) {
 			return;
@@ -125,6 +131,7 @@ public class BTMobiServer implements Runnable {
 
 			try {
 				conn = notifier.acceptAndOpen();
+				System.out.println("new conneccion: "+conn.toString());
 			} catch (IOException e) {
 				// wrong client or interrupted - continue anyway
 				continue;
@@ -139,22 +146,76 @@ public class BTMobiServer implements Runnable {
 	 * through this connection, then close it after all.
 	 */
 	private void processConnection(StreamConnection conn) {
+		System.out.println("process connection");
+		InputStream in = null;
 
-		/*
-		 * // read the image name first String imgName = readImageName(conn);
-		 * 
-		 * // check this image is published and get the image file name imgName
-		 * = parent.getImageFileName(imgName);
-		 * 
-		 * // load image data into buffer to be send byte[] imgData =
-		 * getImageData(imgName);
-		 * 
-		 * // send image data now sendImageData(imgData, conn); // supposed to
-		 * be sendProfileOntology
-		 * 
-		 * // close connection and good-bye try { conn.close(); } catch
-		 * (IOException e) { } // ignore
-		 */
+		try {
+			in = conn.openInputStream();
+
+			int cmd = in.read(); // 'name' length is 1 byte
+			switch (cmd) {
+			case 1: // send profile image
+				System.out.println("server command 1: send image");
+				sendMyProfileImage(in);
+				break;
+			case 2: // get SMS
+				System.out.println("server command 2: receive sms");
+				String sms = receiveSMS(in);
+				parent.receivedNewSMS(sms, conn);
+				break;
+			default:
+
+			}
+		} catch (IOException e) {
+			System.err.println(e);
+		}
+
+		// close input stream anyway
+		if (in != null) {
+			try {
+				in.close();
+			} catch (IOException e) {
+			} // ignore
+		}
+	}
+
+	private String receiveSMS(InputStream in) {
+		System.out.println("receiving sms ... ");
+		String SMS = null;
+
+		try {
+
+			int length = in.read(); // 'name' length is 1 byte
+			System.out.println("sms lengh: " + length);
+			if (length <= 0) {
+				throw new IOException("Can't read name length");
+			}
+
+			byte[] nameData = new byte[length];
+			length = 0;
+
+			while (length != nameData.length) {
+				int n = in.read(nameData, length, nameData.length - length);
+
+				if (n == -1) {
+					throw new IOException("Can't read name data");
+				}
+
+				length += n;
+			}
+
+			SMS = new String(nameData);
+			System.out.println("sms received : " + SMS);
+		} catch (IOException e) {
+			System.err.println(e);
+		}
+		return SMS;
+	}
+
+	private void sendMyProfileImage(InputStream in) {
+		// TODO Auto-generated method stub
+		System.out.println("sending profile image");
+
 	}
 
 	/**
@@ -256,32 +317,33 @@ public class BTMobiServer implements Runnable {
 		}
 		return true;
 	}
+
 	/**
-     * Destroy a work with bluetooth - exits the accepting
-     * thread and close notifier.
-     */
-    void destroy() {
-        isClosed = true;
+	 * Destroy a work with bluetooth - exits the accepting thread and close
+	 * notifier.
+	 */
+	void destroy() {
+		isClosed = true;
 
-        // finalize notifier work
-        if (notifier != null) {
-            try {
-                notifier.close();
-            } catch (IOException e) {
-            } // ignore
-        }
+		// finalize notifier work
+		if (notifier != null) {
+			try {
+				notifier.close();
+			} catch (IOException e) {
+			} // ignore
+		}
 
-        // wait for acceptor thread is done
-        try {
-            accepterThread.join();
-        } catch (InterruptedException e) {
-        } // ignore
+		// wait for acceptor thread is done
+		try {
+			accepterThread.join();
+		} catch (InterruptedException e) {
+		} // ignore
 
-        // finalize processor
-        if (processor != null) {
-            processor.destroy(true);
-        }
+		// finalize processor
+		if (processor != null) {
+			processor.destroy(true);
+		}
 
-        processor = null;
-    }
+		processor = null;
+	}
 }

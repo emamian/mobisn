@@ -1,5 +1,7 @@
 package edu.ndsu.cs.mobisn;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -13,6 +15,8 @@ import javax.bluetooth.LocalDevice;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
+import javax.microedition.io.Connector;
+import javax.microedition.io.StreamConnection;
 
 public class BTMobiClient implements Runnable, DiscoveryListener {
 	/** Describes this server */
@@ -59,10 +63,10 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	private int[] searchIDs;
 
 	/** Keeps the image name to be load. */
-	private String profileNameToLoad;
+	private String profileKeyToLoad;
 
 	/** Keeps the table of {name, Service} to process the user choice. */
-	private Hashtable base = new Hashtable();
+	private Hashtable base = null;
 
 	/** Informs the thread the download should be canceled. */
 	private boolean isDownloadCanceled;
@@ -75,6 +79,10 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 
 	private boolean isBTReady;
 
+	private int command = -1;
+
+	private String smsToSend = "";
+
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
 	 * thread to "avoid dead lock".
@@ -84,6 +92,9 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	BTMobiClient(GUIMobiClient parent) throws BluetoothStateException {
 		this.parent = parent;
 		isBTReady = false;
+		base = parent.getBase();
+		if (base == null)
+			System.err.println("base hashtable cannot be null");
 
 		// create/get a local device and discovery agent
 		LocalDevice localDevice = LocalDevice.getLocalDevice();
@@ -190,13 +201,24 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 				}
 
 				// this means "go to the beginning"
-				if (profileNameToLoad == null) {
+				if (profileKeyToLoad == null || command == -1) {
+					System.err.println("prfile or command unknown");
 					break;
 				}
 
-				// load selected image data
-				Profile p = loadProfile();
-
+				switch (command) {
+				case 1: // load profile
+					loadFriendProfile();
+					break;
+				case 2: // load profile
+					ServiceRecord sr = loadServiceRecordFromBase();
+					sendSMSToFriend(sr, smsToSend);
+					break;
+				default:
+					System.err.println("unknown command in bt_client: "
+							+ command);
+				}
+				command = -1;
 				// this should never happen - monitor is taken...
 				if (isClosed) {
 					return;
@@ -205,30 +227,175 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 				if (isDownloadCanceled) {
 					continue; // may be next image to be download
 				}
-
-				if (p == null) {
-					parent.informLoadError("Can't load profile: "
-							+ profileNameToLoad);
-
-					continue; // may be next image to be download
-				}
-
-				// ok, show image to user
-				parent.showProfile(p, profileNameToLoad);
-
-				// may be next image to be download
-				continue;
 			}
 		}
 	}
 
-	private Profile loadProfile() {
+	private boolean sendSMSToFriend(ServiceRecord sr, String sms) {
+		StreamConnection conn = null;
+		String url = null;
 
-		if (!base.containsKey(profileNameToLoad))
+		// the process may be canceled
+		if (isDownloadCanceled) {
+			return false;
+		}
+
+		// first - connect
+		try {
+			url = sr.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT,
+					false);
+			conn = (StreamConnection) Connector.open(url);
+		} catch (IOException e) {
+			System.err.println("Note: can't connect to: " + url);
+
+			// ignore
+			return false;
+		}
+
+		// then open a stream and write a name
+		try {
+			OutputStream out = conn.openOutputStream();
+			out.write(2); // service code for sms
+			out.write(sms.getBytes().length);
+			out.write(sms.getBytes());
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			System.err.println("sendsms:Can't write to server for: " + url);
+
+			// close stream connection
+			try {
+				conn.close();
+			} catch (IOException ee) {
+				System.out.println("error in closing connection");
+				ee.printStackTrace();
+			} // ignore
+			return false;
+		}
+		return true;
+	}
+
+	private synchronized boolean loadFriendProfile() {
+		// load selected image data
+		Profile p = loadProfileFromBase();
+		ServiceRecord sr = loadServiceRecordFromBase();
+
+		// this should never happen - monitor is taken...
+		if (isClosed) {
+			return false;
+		}
+
+		if (isDownloadCanceled) {
+			return false; // may be next image to be download
+		}
+
+		if (p == null | sr == null) {
+			parent.informLoadError("Can't load profile key: "
+					+ profileKeyToLoad);
+			return false;
+		}
+		if (!loadFriendImage(p, sr)) {
+			parent.informLoadError("Can't load profile image, key: "
+					+ profileKeyToLoad);
+			return false;
+
+		}
+
+		// ok, show profile to user
+		parent.showFriendProfile(p, profileKeyToLoad);
+		// may be next image to be download
+
+		return true;
+	}
+
+	private boolean loadFriendImage(Profile p, ServiceRecord sr) {
+		StreamConnection conn = null;
+		String url = null;
+
+		// the process may be canceled
+		if (isDownloadCanceled) {
+			return false;
+		}
+
+		// first - connect
+		try {
+			url = sr.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT,
+					false);
+			conn = (StreamConnection) Connector.open(url);
+		} catch (IOException e) {
+			System.err.println("Note: can't connect to: " + url);
+
+			// ignore
+			return false;
+		}
+
+		// then open a steam and write a name
+		try {
+			OutputStream out = conn.openOutputStream();
+			out.write(1);// service code for profile image
+			out.flush();
+			out.close();
+		} catch (IOException e) {
+			System.err.println("Can't write to server for: " + url);
+
+			// close stream connection
+			try {
+				conn.close();
+			} catch (IOException ee) {
+				System.out.println("error in closing connection");
+				ee.printStackTrace();
+			} // ignore
+			return false;
+		}
+		/*
+		 * // then open a steam and read an image byte[] imgData = null;
+		 * 
+		 * try { InputStream in = conn.openInputStream();
+		 * 
+		 * // read a length first int length = in.read() << 8; length |=
+		 * in.read();
+		 * 
+		 * if (length <= 0) { throw new IOException("Can't read a length"); }
+		 * 
+		 * // read the image now imgData = new byte[length]; length = 0;
+		 * 
+		 * while (length != imgData.length) { int n = in.read(imgData, length,
+		 * imgData.length - length);
+		 * 
+		 * if (n == -1) { throw new IOException("Can't read a image data"); }
+		 * 
+		 * length += n; }
+		 * 
+		 * in.close(); } catch (IOException e) {
+		 * System.err.println("Can't read from server for: " + url);
+		 * 
+		 * continue; } finally { // close stream connection anyway try {
+		 * conn.close(); } catch (IOException e) { } // ignore }
+		 * 
+		 * // ok, may it's a chance Image img = null;
+		 * 
+		 * try { img = Image.createImage(imgData, 0, imgData.length); } catch
+		 * (Exception e) { // may be next time
+		 * System.err.println("Error: wrong image data from: " + url);
+		 * 
+		 * continue; }
+		 */
+		return true;
+	}
+
+	private Profile loadProfileFromBase() {
+		if (!base.containsKey(profileKeyToLoad))
 			return null;
-		Vector v = (Vector) base.get(profileNameToLoad);
-		Profile p = (Profile) v.elementAt(0);
-		return p;
+		FriendWrapper f = (FriendWrapper) base.get(profileKeyToLoad);
+		return f.getProfile();
+	}
+
+	private ServiceRecord loadServiceRecordFromBase() {
+
+		if (!base.containsKey(profileKeyToLoad))
+			return null;
+		FriendWrapper f = (FriendWrapper) base.get(profileKeyToLoad);
+		return f.getServiceRecord();
 	}
 
 	/**
@@ -373,9 +540,9 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	}
 
 	/**
-	 * Gets the collection of the images titles (names) from the services,
-	 * prepares a hashtable to match the image name to a services list, presents
-	 * the images names to user finally.
+	 * Gets the collection of the names from the services, prepares a hashtable
+	 * to match the image name to a services list, presents the profile names to
+	 * user finally.
 	 * 
 	 * @return false if no names in found services.
 	 */
@@ -430,19 +597,38 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					System.err.println("some fields are missing: " + h);
 					continue;
 				}
-				Vector v = new Vector(3);
-				v.insertElementAt(p, 0);
-				v.insertElementAt(sr, 1);
-				v.insertElementAt(h.get("interests"), 2);
-				base.put(p.getFullName(), v);
-
+				FriendWrapper fw = new FriendWrapper(true, p, sr, (String) h
+						.get("interests"));
+				if(base.containsKey(fw.getKey())){
+					base.remove(fw.getKey());
+				}
+				base.put(fw.getKey(), fw);
+				/*
+				 * 
+				 * Vector v = friendPropertiesVector(p, sr, (String) h
+				 * .get("interests"));
+				 * base.put(sr.getHostDevice().getBluetoothAddress(), v);
+				 * base.put(p.getID(), v);
+				 */
 			}
 
-			return parent.showImagesNames(base);
+			return parent.showFriendsNames(base);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	// profile 0
+	// service record 1
+	// interests 2
+	private Vector friendPropertiesVector(Profile prof, ServiceRecord sr,
+			String interests) {
+		Vector v = new Vector(3);
+		v.insertElementAt(prof, 0);
+		v.insertElementAt(sr, 1);
+		v.insertElementAt(interests, 2);
+		return v;
 	}
 
 	/** Cancel's the devices/services search. */
@@ -545,7 +731,19 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 
 	void requestLoad(String name) {
 		synchronized (this) {
-			profileNameToLoad = name;
+			System.out.println("bt_ trying to load profile");
+			profileKeyToLoad = name;
+			command = 1; // load profile
+			notify();
+		}
+	}
+
+	void sendSMS(String sms, String friendKey) {
+		synchronized (this) {
+			System.out.println("bt_ trying to send sms, fkey is " + friendKey);
+			profileKeyToLoad = friendKey;
+			smsToSend = sms;
+			command = 2; // send direct sms
 			notify();
 		}
 	}
