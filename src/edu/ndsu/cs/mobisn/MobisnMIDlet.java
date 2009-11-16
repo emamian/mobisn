@@ -14,6 +14,7 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDlet;
 
@@ -29,7 +30,10 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	/** A list of menu items */
 	private static final String[] elements = { "System Management",
-			"Group Management", "Profile Management", "Interests", "messages" };
+		"Group Management", "Profile Management", "Interests", "messages" };
+	
+	private static final String[] elementsImgs = { "System Management.jpg",
+		"Group Management.jpg", "Profile Management.jpg", "", "" };
 
 	/** A menu list instance */
 	private final List menu = new List("MobiSN Demo", List.IMPLICIT, elements,
@@ -181,6 +185,15 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			menu.addCommand(OK_CMD);
 			menu.setCommandListener(this);
 			menu.setTitle(profile.getFullName());
+			
+			String menuImagesPrefix = "/menu/";
+			for (int i = 0; i < menu.size(); i++) {
+				if(elementsImgs[i]!=""){
+					menu.set(i, elements[i], Image.createImage(menuImagesPrefix+elementsImgs[i]));
+				}
+			}
+			
+			
 			myProfileScreen = new GUIProfile(this);
 			interestsScreen = new GUIInterests(this);
 			inboxScreen = new GUIMessages(this);
