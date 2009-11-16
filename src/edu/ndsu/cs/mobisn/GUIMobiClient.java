@@ -82,7 +82,7 @@ public class GUIMobiClient implements CommandListener {
 		si.setLayout(StringItem.LAYOUT_CENTER | StringItem.LAYOUT_VCENTER);
 		mainScreen.append(si);
 
-		smsBox = new TextBox("SMS", "Text message to send", 256, TextField.ANY);
+		smsBox = new TextBox("SMS", "Text message to send", 254, TextField.ANY);
 		smsBox.addCommand(SMS_SEND_CMD);
 		smsBox.addCommand(SMS_CANCEL_CMD);
 		smsBox.setCommandListener(this);
