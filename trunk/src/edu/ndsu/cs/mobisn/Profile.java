@@ -127,20 +127,20 @@ public class Profile {
 	}
 
 	public DataElement getServiceRecordElement() {
-		DataElement base = new DataElement(DataElement.DATSEQ);
+		DataElement ret = new DataElement(DataElement.DATSEQ);
 
 		DataElement de;
 		de = new DataElement(DataElement.STRING, "name:" + name);
-		base.addElement(de);
+		ret.addElement(de);
 		de = new DataElement(DataElement.STRING, "family:" + family);
-		base.addElement(de);
+		ret.addElement(de);
 		de = new DataElement(DataElement.STRING, "age:" + age);
-		base.addElement(de);
+		ret.addElement(de);
 		de = new DataElement(DataElement.STRING, "interests:"
 				+ getInterestsVectorString());
-		base.addElement(de);
+		ret.addElement(de);
 
-		return base;
+		return ret;
 	}
 
 	// should correspond to getServiceRecordElement() function

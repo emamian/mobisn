@@ -22,8 +22,10 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	private static final UUID PICTURES_SERVER_UUID = new UUID(
 			"F0E0D0C0B0A000908070605040302010", false);
 
-	/** The attribute id of the record item with images names. */
-	public static final int IMAGES_NAMES_ATTRIBUTE_ID = 0x4321;
+	/** The attribute id of the record item with profile info. */
+	public static final int MOBISN_PROFILE_ATTRIBUTE_ID = 0x4321;
+	/** The attribute id of the record item with routing table info. */
+	public static final int MOBISN_RT_ATTRIBUTE_ID = 0x4431;
 
 	/** Shows the engine is ready to work. */
 	private static final int READY = 0;
@@ -63,9 +65,6 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 
 	/** Keeps the image name to be load. */
 	private String profileKeyToLoad;
-
-	/** Keeps the table of {name, Service} to process the user choice. */
-	// private Hashtable base = null;
 
 	/** Informs the thread the download should be canceled. */
 	private boolean isDownloadCanceled;
@@ -130,7 +129,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		attrSet = new int[1];
 
 		// it's "images names" one
-		attrSet[0] = IMAGES_NAMES_ATTRIBUTE_ID;
+		attrSet[0] = MOBISN_PROFILE_ATTRIBUTE_ID;
 
 		// start processing the images search/download
 		processImagesSearchDownload();

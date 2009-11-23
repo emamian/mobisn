@@ -1,7 +1,5 @@
 package edu.ndsu.cs.mobisn;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Vector;
 
 import javax.bluetooth.BluetoothStateException;
@@ -90,7 +88,7 @@ public class GUIMobiClient implements CommandListener {
 	}
 
 	public void show() {
-		Display.getDisplay(parent).setCurrent(mainScreen);
+		parent.changeDisplay(mainScreen);
 	}
 
 	/**
@@ -116,7 +114,7 @@ public class GUIMobiClient implements CommandListener {
 			f.setCommandListener(this);
 			f.append(new Gauge("Searching in progress...", false,
 					Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING));
-			Display.getDisplay(parent).setCurrent(f);
+			parent.changeDisplay(f);
 			bt_client.requestSearch();
 
 			return;
@@ -125,14 +123,14 @@ public class GUIMobiClient implements CommandListener {
 		// cancels device/services search
 		if (c == SCR_SEARCH_CANCEL_CMD) {
 			bt_client.cancelSearch();
-			Display.getDisplay(parent).setCurrent(mainScreen);
+			parent.changeDisplay(mainScreen);
 
 			return;
 		}
 		// back to client main screen
 		if (c == SCR_PROFILES_BACK_CMD) {
 			bt_client.requestLoad(null);
-			Display.getDisplay(parent).setCurrent(mainScreen);
+			parent.changeDisplay(mainScreen);
 
 			return;
 		}
@@ -143,7 +141,7 @@ public class GUIMobiClient implements CommandListener {
 			f.setCommandListener(this);
 			f.append(new Gauge("Loading Profile...", false, Gauge.INDEFINITE,
 					Gauge.CONTINUOUS_RUNNING));
-			Display.getDisplay(parent).setCurrent(f);
+			parent.changeDisplay(f);
 
 			List l = (List) d;
 			try {
@@ -161,7 +159,7 @@ public class GUIMobiClient implements CommandListener {
 		}
 		// back to client main screen
 		if (c == SCR_SHOW_BACK_CMD || c == SMS_CANCEL_CMD) {
-			Display.getDisplay(parent).setCurrent(listScreen);
+			parent.changeDisplay(listScreen);
 
 			return;
 		}
@@ -179,7 +177,7 @@ public class GUIMobiClient implements CommandListener {
 			f.setCommandListener(this);
 			f.append(new Gauge("Sending SMS  ...", false, Gauge.INDEFINITE,
 					Gauge.CONTINUOUS_RUNNING));
-			Display.getDisplay(parent).setCurrent(f);
+			parent.changeDisplay(f);
 			List l = listScreen;
 			try {
 				String friendKey = (String) listScreenKeys.elementAt(l
@@ -193,14 +191,14 @@ public class GUIMobiClient implements CommandListener {
 						.println("sms: index of selected friend out of bound of listScreenKeys");
 				e.printStackTrace();
 			}
-			Display.getDisplay(parent).setCurrent(listScreen);
+			parent.changeDisplay(listScreen);
 			return;
 		}
 	}
 
 	private void showTextSendForm(boolean show) {
 		if (show) {
-			Display.getDisplay(parent).setCurrent(smsBox);
+			parent.changeDisplay(smsBox);
 		}
 	}
 
@@ -264,7 +262,7 @@ public class GUIMobiClient implements CommandListener {
 					.println("list of friends' profiles in screen and keys don't match");
 			return false;
 		}
-		Display.getDisplay(parent).setCurrent(listScreen);
+		parent.changeDisplay(listScreen);
 
 		return true;
 	}
@@ -279,7 +277,7 @@ public class GUIMobiClient implements CommandListener {
 	private void showAlertGoTo(String Msg, Displayable destination) {
 		Alert al = new Alert("Error", Msg, null, AlertType.ERROR);
 		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		Display.getDisplay(parent).setCurrent(al, destination);
+		parent.changeDisplay(al, destination);
 	}
 
 	/**
@@ -288,7 +286,7 @@ public class GUIMobiClient implements CommandListener {
 	void showFriendProfile(Profile p, String pName) {
 		friendDetailScreen.deleteAll();
 		p.showIn(friendDetailScreen);
-		Display.getDisplay(parent).setCurrent(friendDetailScreen);
+		parent.changeDisplay(friendDetailScreen);
 
 	}
 
