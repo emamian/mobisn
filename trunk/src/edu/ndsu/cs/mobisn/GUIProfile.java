@@ -78,7 +78,15 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 		items.insertElementAt(item, 2);
 		item = new StringItem("Age: ", profile.getAge());
 		items.insertElementAt(item, 3);
-		item = new StringItem("interests: ", profile.getInterestsVectorString());
+		//load from disk, if blank, load default.
+		String interestData = profile.loadStringInterests();
+		if(interestData == "")
+		{
+			//load default.
+			interestData = profile.getInterestsVectorString();
+		}
+		//item = new StringItem("interests: ", profile.getInterestsVectorString());
+		item = new StringItem("interests: ", interestData);
 		items.insertElementAt(item, 4);
 		
 		for (int i = 0; i < items.size(); i++) {
