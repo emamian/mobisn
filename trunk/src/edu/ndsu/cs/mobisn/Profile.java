@@ -65,23 +65,7 @@ public class Profile {
 		this.age = age;
 	}
 
-	private double cosineAngle(Vector v1, Vector v2) {
-		double nominator = 0.0;
-		// System.out.println("relevalnce: "+v1.toString()+" -> "+v2.toString());
-
-		if (v1.size() != v2.size())
-			return -2.0;
-		for (int i = 0; i < v1.size(); i++) {
-			Double d1 = Double.valueOf(v1.elementAt(i).toString());
-			Double d2 = Double.valueOf(v2.elementAt(i).toString());
-			nominator += d1.doubleValue() * d2.doubleValue();
-			// System.out.println(d1+"*"+d2+"->"+nominator);
-		}
-		double sizes = sizeOfVector(v1) * sizeOfVector(v2);
-		if (sizes == 0.0)
-			return -3.0;
-		return nominator / sizes;
-	}
+	
 
 	public String getAge() {
 		return age;
@@ -109,7 +93,7 @@ public class Profile {
 	}
 
 	public String getInterestsVectorString() {
-		return interests.getVectorString();
+		return interests.getInterestsString();
 	}
 
 	public String getName() {
@@ -117,9 +101,9 @@ public class Profile {
 	}
 
 	public double getRelevance(String interestsVectorString) throws Exception {
-		Vector v = Interests.getVectorFromString(interestsVectorString);
+		Vector v = interests.getVectorFromString(interestsVectorString);
 		Vector myVector = interests.getVector();
-		return cosineAngle(myVector, v);
+		return Interests.getRelevance(myVector, v);
 	}
 
 	public NodeData getRootInterest() {
@@ -191,16 +175,5 @@ public class Profile {
 		for (int i = 0; i < v.size(); i++) {
 			f.append((Item)v.elementAt(i));
 		}
-	}
-
-	private double sizeOfVector(Vector v) {
-		double size = 0.0;
-		for (int i = 0; i < v.size(); i++) {
-			double d = Double.parseDouble(v.elementAt(i).toString());
-			size += d * d;
-
-		}
-		size = Math.sqrt(size);
-		return size;
 	}
 }

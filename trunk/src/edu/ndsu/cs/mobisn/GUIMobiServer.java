@@ -1,4 +1,5 @@
 package edu.ndsu.cs.mobisn;
+import javax.bluetooth.DataElement;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -162,5 +163,9 @@ public class GUIMobiServer implements CommandListener {
 			System.out.println("profile republished");
 		}
 		
+	}
+
+	public DataElement getMyRT() {
+		return parent.getMyRT();
 	}
 }

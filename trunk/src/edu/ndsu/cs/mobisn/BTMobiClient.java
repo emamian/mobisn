@@ -19,13 +19,11 @@ import javax.microedition.lcdui.Image;
 
 public class BTMobiClient implements Runnable, DiscoveryListener {
 	/** Describes this server */
-	private static final UUID PICTURES_SERVER_UUID = new UUID(
-			"F0E0D0C0B0A000908070605040302010", false);
-
+	
 	/** The attribute id of the record item with profile info. */
 	public static final int MOBISN_PROFILE_ATTRIBUTE_ID = 0x4321;
 	/** The attribute id of the record item with routing table info. */
-	public static final int MOBISN_RT_ATTRIBUTE_ID = 0x4431;
+	public static final int MOBISN_RT_ATTRIBUTE_ID = 0x4231;
 
 	/** Shows the engine is ready to work. */
 	private static final int READY = 0;
@@ -123,7 +121,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		uuidSet[0] = new UUID(0x1101);
 
 		// and only known ones, that allows pictures
-		uuidSet[1] = PICTURES_SERVER_UUID;
+		uuidSet[1] = BTMobiServer.MOBISN_SERVER_UUID;
 
 		// we need an only service attribute actually
 		attrSet = new int[1];

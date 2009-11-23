@@ -21,11 +21,8 @@ public class BTMobiServer implements Runnable {
 	Profile myProfile;
 
 	/** Describes this server */
-	private static final UUID MOBISN_SERVER_UUID = new UUID(
+	public static final UUID MOBISN_SERVER_UUID = new UUID(
 			"F0E0D0C0B0A000908070605040302010", false);
-
-	/** The attribute id of the record item with images names. */
-	private static final int IMAGES_NAMES_ATTRIBUTE_ID = 0x4321;
 
 	/** Keeps the local device reference. */
 	private LocalDevice localDevice;
@@ -99,9 +96,9 @@ public class BTMobiServer implements Runnable {
 		// and remember the service record for the later updates
 		record = localDevice.getRecord(notifier);
 
-		// create a special attribute with images names
-		DataElement base = new DataElement(DataElement.DATSEQ);
-		record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, base);
+		// // create a special attribute with images names
+		// DataElement base = new DataElement(DataElement.DATSEQ);
+		// record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, base);
 
 		// remember we've reached this point.
 		isBTReady = true;
@@ -224,7 +221,8 @@ public class BTMobiServer implements Runnable {
 	private void sendMyProfileImage(StreamConnection conn) {
 		System.out.println("sending profile image");
 		byte[] imgData = getImageData(parent.getProfile().getImagePath());
-		System.out.println("imagepath: "+parent.getProfile().getImagePath()+" imagedata length : "+imgData.length);
+		System.out.println("imagepath: " + parent.getProfile().getImagePath()
+				+ " imagedata length : " + imgData.length);
 		sendImageData(imgData, conn);
 
 	}
@@ -367,31 +365,40 @@ public class BTMobiServer implements Runnable {
 		}
 	}
 
-	public boolean publishProfile(boolean isPublished) {
+	public boolean publishProfile(boolean canPublish) {
+		//TODO add routing table to service record
 		DataElement de;
-		if (isPublished) {
+		DataElement de2;
+		if (canPublish) {
 			// put profiles summery in serviceRecord
 			de = myProfile.getServiceRecordElement();
+			de2 = parent.getMyRT();
+			System.out.println(de2.toString());
+			if(de2 == null)
+				System.out.println("cann not get my routing table as dataelement");
 		} else {
 			de = new DataElement(DataElement.DATSEQ);
+			de2 = new DataElement(DataElement.DATSEQ);
 		}
 
-		record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, de);
+		record.setAttributeValue(BTMobiClient.MOBISN_PROFILE_ATTRIBUTE_ID, de);
+		record.setAttributeValue(BTMobiClient.MOBISN_RT_ATTRIBUTE_ID, de2);
 
 		try {
 			localDevice.updateRecord(record);
-			if(isPublished)
-				System.out.println("profile online: "+myProfile.getFamily());
+			if (canPublish)
+				System.out.println("profile online: " + myProfile.getFamily());
 			else
-				System.out.println("profile offline: "+myProfile.getFamily());
-				
-			profileOnline  = isPublished;
+				System.out.println("profile offline: " + myProfile.getFamily());
+
+			profileOnline = canPublish;
 		} catch (ServiceRegistrationException e) {
 			System.err.println("Can't update profile on serviceRecord");
 			return false;
 		}
 		return true;
 	}
+
 
 	/**
 	 * Destroy a work with bluetooth - exits the accepting thread and close
