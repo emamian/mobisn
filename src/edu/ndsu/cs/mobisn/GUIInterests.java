@@ -35,10 +35,16 @@ public class GUIInterests implements CommandListener {
 		if (c == INTRST_BACK_CMD) {
 			NodeData f = interest.getFather();
 			if (f == null) {
+				//save record.
+				parent.getProfile().saveStringInterests();
+				//TODO save node int...
+				//parent.getProfile().saveNodeInterests();
+				System.out.println("PRofile saved");
 				parent.show();
 				return;
 			}
 			this.interest = f;
+			
 			show();
 			return;
 		} else if (c == INTRST_DETAIL_CMD) {
