@@ -221,11 +221,10 @@ public class GUIMobiClient implements CommandListener {
 	 * 
 	 * @returns false if no profile names were found actually
 	 */
-	boolean showFriendsNames(Hashtable base) {
-		Enumeration keys = base.keys();
-
+	boolean showFriendsNames() {
+		Vector keys = parent.getBaseOnlineKeys();//instead of base.keys();
 		// no images actually
-		if (!keys.hasMoreElements()) {
+		if (keys.isEmpty()) {
 			informSearchError("No profiles found");
 
 			return false;
@@ -236,22 +235,24 @@ public class GUIMobiClient implements CommandListener {
 			listScreen.delete(0);
 		}
 		listScreenKeys.removeAllElements();
-		while (keys.hasMoreElements()) {
-			String key = (String) keys.nextElement();
+		for(int i=0;i<keys.size();i++) {
+			String key = (String) keys.elementAt(i);
 			Profile myProfile = parent.getProfile();
-			String othersInterests = (String) ((FriendWrapper) base.get(key))
+			String othersInterests = (String) parent.loadFromBase(key)
 					.getInterests();
 			double relevance;
 			try {
 				relevance = myProfile.getRelevance(othersInterests);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
+				System.err.println("could not find relevance: ");
+				System.err.println(" --- other interest:"+othersInterests);
+				System.err.println(" --- key:"+key);
 				e.printStackTrace();
 				return false;
 			}
 			if (relevance < -1.0)
 				return false;
-			Profile friend = (Profile) ((FriendWrapper) base.get(key)).getProfile();
+			Profile friend = (Profile) parent.loadFromBase(key).getProfile();
 
 			listScreenKeys.addElement(key);
 			listScreen.append(friend.getFullName() + "(relevance:" + relevance
@@ -291,7 +292,16 @@ public class GUIMobiClient implements CommandListener {
 
 	}
 
-	public Hashtable getBase() {
-		return parent.getBase();
+	public void clearBase() {
+		parent.clearBase();
+		
+	}
+
+	public FriendWrapper loadFromBase(String profileKeyToLoad) {
+		return parent.loadFromBase(profileKeyToLoad);
+	}
+
+	public void updateBase(Vector records) {
+		parent.updateBase(records);
 	}
 }
