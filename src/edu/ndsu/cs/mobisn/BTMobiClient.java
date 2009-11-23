@@ -3,12 +3,9 @@ package edu.ndsu.cs.mobisn;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Vector;
 
 import javax.bluetooth.BluetoothStateException;
-import javax.bluetooth.DataElement;
 import javax.bluetooth.DeviceClass;
 import javax.bluetooth.DiscoveryAgent;
 import javax.bluetooth.DiscoveryListener;
@@ -26,7 +23,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			"F0E0D0C0B0A000908070605040302010", false);
 
 	/** The attribute id of the record item with images names. */
-	private static final int IMAGES_NAMES_ATTRIBUTE_ID = 0x4321;
+	public static final int IMAGES_NAMES_ATTRIBUTE_ID = 0x4321;
 
 	/** Shows the engine is ready to work. */
 	private static final int READY = 0;
@@ -68,7 +65,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	private String profileKeyToLoad;
 
 	/** Keeps the table of {name, Service} to process the user choice. */
-	private Hashtable base = null;
+	// private Hashtable base = null;
 
 	/** Informs the thread the download should be canceled. */
 	private boolean isDownloadCanceled;
@@ -94,9 +91,9 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	BTMobiClient(GUIMobiClient parent) throws BluetoothStateException {
 		this.parent = parent;
 		isBTReady = false;
-		base = parent.getBase();
-		if (base == null)
-			System.err.println("base hashtable cannot be null");
+		// base = parent.getBase();
+		// if (base == null)
+		// System.err.println("base hashtable cannot be null");
 
 		// create/get a local device and discovery agent
 		LocalDevice localDevice = LocalDevice.getLocalDevice();
@@ -144,52 +141,14 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	 * error has happen.
 	 */
 	private synchronized void processImagesSearchDownload() {
-		System.out.println("process search download");
-		while (!isClosed) {
-			// wait for new search request from user
-			state = READY;
+		try {
+			System.out.println("process search download");
+			while (!isClosed) {
+				// wait for new search request from user
+				state = READY;
 
-			try {
-				System.out.println("bt_client ready state");
-				wait();
-			} catch (InterruptedException e) {
-				System.err.println("Unexpected interruption: " + e);
-
-				return;
-			}
-
-			// check the component is destroyed
-			if (isClosed) {
-				return;
-			}
-			System.out.println("search devices");
-			// search for devices
-			if (!searchDevices()) {
-				return;
-			} else if (devices.size() == 0) {
-				continue;
-			}
-
-			System.out.println("search services");
-			// search for services now
-			if (!searchServices()) {
-				return;
-			} else if (records.size() == 0) {
-				continue;
-			}
-			System.out.println("present results");
-			// ok, something was found - present the result to user now
-			if (!presentUserSearchResults()) {
-				// services are found, but no names there
-				continue;
-			}
-			// the several download requests may be processed
-			while (true) {
-				// this download is not canceled, right?
-				isDownloadCanceled = false;
-
-				// ok, wait for download or need to wait for next search
 				try {
+					System.out.println("bt_client ready state");
 					wait();
 				} catch (InterruptedException e) {
 					System.err.println("Unexpected interruption: " + e);
@@ -201,35 +160,79 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 				if (isClosed) {
 					return;
 				}
-
-				// this means "go to the beginning"
-				if (profileKeyToLoad == null || command == -1) {
-					System.err.println("prfile or command unknown");
-					break;
-				}
-
-				switch (command) {
-				case 1: // load profile
-					loadFriendProfile();
-					break;
-				case 2: // load profile
-					ServiceRecord sr = loadServiceRecordFromBase();
-					sendSMSToFriend(sr, smsToSend);
-					break;
-				default:
-					System.err.println("unknown command in bt_client: "
-							+ command);
-				}
-				command = -1;
-				// this should never happen - monitor is taken...
-				if (isClosed) {
+				System.out.println("search devices");
+				// search for devices
+				if (!searchDevices()) {
 					return;
+				} else if (devices.size() == 0) {
+					continue;
 				}
 
-				if (isDownloadCanceled) {
-					continue; // may be next image to be download
+				System.out.println("search services");
+				// search for services now
+				if (!searchServices()) {
+					return;
+				} else if (records.size() == 0) {
+					continue;
+				}
+				System.out.println("present results");
+
+				// ok, something was found - present the result to user now
+				if (!presentUserSearchResults()) {
+					// services are found, but no names there
+					continue;
+				}
+				// the several download requests may be processed
+				while (true) {
+					// this download is not canceled, right?
+					isDownloadCanceled = false;
+
+					// ok, wait for download or need to wait for next search
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						System.err.println("Unexpected interruption: " + e);
+
+						return;
+					}
+
+					// check the component is destroyed
+					if (isClosed) {
+						return;
+					}
+
+					// this means "go to the beginning"
+					if (profileKeyToLoad == null || command == -1) {
+						System.err.println("prfile or command unknown");
+						break;
+					}
+
+					switch (command) {
+					case 1: // load profile
+						loadFriendProfile();
+						break;
+					case 2: // load profile
+						ServiceRecord sr = loadServiceRecordFromBase();
+						sendSMSToFriend(sr, smsToSend);
+						break;
+					default:
+						System.err.println("unknown command in bt_client: "
+								+ command);
+					}
+					command = -1;
+					// this should never happen - monitor is taken...
+					if (isClosed) {
+						return;
+					}
+
+					if (isDownloadCanceled) {
+						continue; // may be next image to be download
+					}
 				}
 			}
+		} catch (Exception e) {
+			System.err.println("process search download err");
+			e.printStackTrace();
 		}
 	}
 
@@ -297,7 +300,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			return false;
 		}
 		Image img = null;
-		if ((img =loadFriendImage(p, sr))== null) {
+		if ((img = loadFriendImage(p, sr)) == null) {
 			parent.informLoadError("Can't load profile image, key: "
 					+ profileKeyToLoad);
 			return false;
@@ -351,76 +354,78 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			} // ignore
 			return null;
 		}
-		
+
 		// then open a steam and read an image
-        byte[] imgData = null;
+		byte[] imgData = null;
 
-        try {
-            InputStream in = conn.openInputStream();
-            System.out.println("made input sream");
-            // read a length first
-            int length = in.read() << 8;
-            length |= in.read();
+		try {
+			InputStream in = conn.openInputStream();
+			System.out.println("made input sream");
+			// read a length first
+			int length = in.read() << 8;
+			length |= in.read();
 
-            System.out.println("length is :"+length);
-            if (length <= 0) {
-                throw new IOException("Can't read a length");
-            }
+			System.out.println("length is :" + length);
+			if (length <= 0) {
+				throw new IOException("Can't read a length");
+			}
 
-            // read the image now
-            imgData = new byte[length];
-            int lengthRead = 0;
+			// read the image now
+			imgData = new byte[length];
+			int lengthRead = 0;
 
-            while (lengthRead != imgData.length) {
-                int n = in.read(imgData, lengthRead, imgData.length - lengthRead);
+			while (lengthRead != imgData.length) {
+				int n = in.read(imgData, lengthRead, imgData.length
+						- lengthRead);
 
-                if (n == -1) {
-                    throw new IOException("Can't read a image data");
-                }
+				if (n == -1) {
+					throw new IOException("Can't read a image data");
+				}
 
-                lengthRead += n;
-                System.out.println("lengthRead is "+lengthRead);
-            }
+				lengthRead += n;
+				System.out.println("lengthRead is " + lengthRead);
+			}
 
-            in.close();
-        } catch (IOException e) {
-            System.err.println("Can't read from server for: " + url);
-            return null;
-        } finally {
-            // close stream connection anyway
-            try {
-                conn.close();
-            } catch (IOException e) {
-            } // ignore
-        }
+			in.close();
+		} catch (IOException e) {
+			System.err.println("Can't read from server for: " + url);
+			return null;
+		} finally {
+			// close stream connection anyway
+			try {
+				conn.close();
+			} catch (IOException e) {
+			} // ignore
+		}
 
-        // ok, may it's a chance
-        Image img = null;
+		// ok, may it's a chance
+		Image img = null;
 
-        try {
-            img = Image.createImage(imgData, 0, imgData.length);
-        } catch (Exception e) {
-            // may be next time
-            System.err.println("Error: wrong image data from: " + url);
+		try {
+			img = Image.createImage(imgData, 0, imgData.length);
+		} catch (Exception e) {
+			// may be next time
+			System.err.println("Error: wrong image data from: " + url);
 
-            return null;
-        }
+			return null;
+		}
 		return img;
 	}
 
 	private Profile loadProfileFromBase() {
-		if (!base.containsKey(profileKeyToLoad))
+		FriendWrapper fw = parent.loadFromBase(profileKeyToLoad);
+		if (fw == null)
 			return null;
-		FriendWrapper f = (FriendWrapper) base.get(profileKeyToLoad);
-		return f.getProfile();
+
+		return fw.getProfile();
 	}
 
 	private ServiceRecord loadServiceRecordFromBase() {
-
-		if (!base.containsKey(profileKeyToLoad))
+		FriendWrapper fw = parent.loadFromBase(profileKeyToLoad);
+		if (fw == null)
 			return null;
-		FriendWrapper f = (FriendWrapper) base.get(profileKeyToLoad);
-		return f.getServiceRecord();
+
+		return fw.getServiceRecord();
 	}
 
 	/**
@@ -572,68 +577,8 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	 * @return false if no names in found services.
 	 */
 	private boolean presentUserSearchResults() {
-		try {
-			base.clear();
-
-			for (int i = 0; i < records.size(); i++) {
-				ServiceRecord sr = (ServiceRecord) records.elementAt(i);
-
-				// get the attribute with images names
-				DataElement de = sr
-						.getAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID);
-
-				if (de == null) {
-					System.err.println("Unexpected service - missed attribute");
-
-					continue;
-				}
-
-				// get the images names from this attribute
-				Enumeration deEnum = (Enumeration) de.getValue();
-
-				Hashtable h = new Hashtable();
-				while (deEnum.hasMoreElements()) {
-					de = (DataElement) deEnum.nextElement();
-
-					String name = (String) de.getValue();
-					// System.out.println("name is : " + name);
-					int idx = -1;
-					try {
-						idx = name.indexOf(":");
-						// System.out.println("index: " + idx);
-
-					} catch (Exception e) {
-						System.err.println("error in tag :" + name);
-						e.printStackTrace();
-						continue;
-
-					}
-					if (idx == -1) {
-						continue;
-					}
-					String tag = name.substring(0, idx);
-					String value = name.substring(idx + 1);
-					// System.out.println("result->" + tag + " " + value);
-					h.put(tag, value);
-				}
-				Profile p = new Profile();
-				if (!p.loadFromHashtable(h)) {
-					System.err.println("some fields are missing: " + h);
-					continue;
-				}
-				FriendWrapper fw = new FriendWrapper(true, p, sr, (String) h
-						.get("interests"));
-				if (base.containsKey(fw.getKey())) {
-					base.remove(fw.getKey());
-				}
-				base.put(fw.getKey(), fw);
-			}
-
-			return parent.showFriendsNames(base);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
+		parent.updateBase(records);
+		return parent.showFriendsNames();
 	}
 
 	/** Cancel's the devices/services search. */

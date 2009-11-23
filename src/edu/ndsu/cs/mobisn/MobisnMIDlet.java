@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
+import javax.bluetooth.DataElement;
 import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.ServiceRecord;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -30,10 +33,10 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	/** A list of menu items */
 	private static final String[] elements = { "System Management",
-		"Group Management", "Profile Management", "Interests", "messages" };
-	
+			"Group Management", "Profile Management", "Interests", "messages" };
+
 	private static final String[] elementsImgs = { "System Management.jpg",
-		"Group Management.jpg", "Profile Management.jpg", "", "" };
+			"Group Management.jpg", "Profile Management.jpg", "", "" };
 
 	/** A menu list instance */
 	private final List menu = new List("MobiSN Demo", List.IMPLICIT, elements,
@@ -54,6 +57,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	private Hashtable base = new Hashtable();
 	private Hashtable messages = new Hashtable();
+
+	private BTDiscoveryClient discoveryClient = null;
 
 	// private static final Logger logger = Logger.getLogger("BTMobiClient");
 	/**
@@ -181,19 +186,26 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				showLoadErr("Can't initialize bluetooth client");
 				return;
 			}
+			// start discovery agent
+			try {
+				discoveryClient = new BTDiscoveryClient(this);
+			} catch (Exception e) {
+				System.err.println("could not initiate discovery agent");
+				e.printStackTrace();
+			}
 			menu.addCommand(EXIT_CMD);
 			menu.addCommand(OK_CMD);
 			menu.setCommandListener(this);
 			menu.setTitle(profile.getFullName());
-			
+
 			String menuImagesPrefix = "/menu/";
 			for (int i = 0; i < menu.size(); i++) {
-				if(elementsImgs[i]!=""){
-					menu.set(i, elements[i], Image.createImage(menuImagesPrefix+elementsImgs[i]));
+				if (elementsImgs[i] != "") {
+					menu.set(i, elements[i], Image.createImage(menuImagesPrefix
+							+ elementsImgs[i]));
 				}
 			}
-			
-			
+
 			myProfileScreen = new GUIProfile(this);
 			interestsScreen = new GUIInterests(this);
 			inboxScreen = new GUIMessages(this);
@@ -223,21 +235,26 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			String senderDeviceID = RemoteDevice.getRemoteDevice(conn)
 					.getBluetoothAddress();
 			mw.setSenderDeviceID(senderDeviceID);
-			System.out.println("new message from device: " + senderDeviceID);
+//			System.out.println("new message from device: " + senderDeviceID);
+			// make notice of the sender in base hashtable
 			if (base.containsKey(senderDeviceID)) {
+				FriendWrapper fw = (FriendWrapper) base.get(senderDeviceID);
+				fw.setHasMessages(true);
 				String senderName = ((FriendWrapper) base.get(senderDeviceID))
 						.getProfile().getFullName();
 				mw.setSenderFullName(senderName);
+			} else {
+				System.out.println("message from unknown sender: "
+						+ senderDeviceID);
+				// TODO: should add the device to base , also its infromation
+				// (srevice
+				// record info)
 			}
 			messages.put(senderDeviceID + d.toString(), mw);
 		} catch (IOException e1) {
 			System.err.println("could not find senders bluetooth address");
 			e1.printStackTrace();
 		}
-	}
-
-	public Hashtable getBase() {
-		return base;
 	}
 
 	public void rePublishProfile() {
@@ -255,10 +272,129 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		while (keys.hasMoreElements()) {
 			String key = (String) keys.nextElement();
 			MessageWrapper mw = (MessageWrapper) messages.get(key);
-			if(base.containsKey(mw.getSenderDeviceID())){
-				Profile p = (Profile)((FriendWrapper)base.get(mw.getSenderDeviceID())).getProfile();
+			if (base.containsKey(mw.getSenderDeviceID())) {
+				FriendWrapper fw = (FriendWrapper) base.get(mw
+						.getSenderDeviceID());
+				// if we did not know we have messages from this device,
+				// set that we have messages from this, so we won't delete it
+				fw.setHasMessages(true);
+
+				Profile p = (Profile) loadFromBase(mw.getSenderDeviceID())
+						.getProfile();
+				// set sender info for this message
 				mw.setSenderFullName(p.getFullName());
 			}
 		}
+	}
+
+	public void informDiscoverySearchError(String string) {
+		System.err.println("device discovery agent: " + string);
+	}
+
+	public void clearBase() {
+		Enumeration keys = base.keys();
+
+		while (keys.hasMoreElements()) {
+			String key = (String) keys.nextElement();
+			FriendWrapper fw = (FriendWrapper) base.get(key);
+			if (!fw.hasMessages()) {
+				base.remove(key);
+			}
+			fw.setOnline(false); // temporarily set offline until a BT agent
+			// update it
+		}
+	}
+
+	/**
+	 * @param records
+	 *            a vector of 'ServiceRecord' objects from discovery agent of
+	 *            BTclient
+	 */
+	public void updateBase(Vector records) {
+		try {
+			clearBase(); // clear devices that we don't have messages from
+			for (int i = 0; i < records.size(); i++) {
+				ServiceRecord sr = (ServiceRecord) records.elementAt(i);
+
+				// get the attribute with images names
+				DataElement de = sr
+						.getAttributeValue(BTMobiClient.IMAGES_NAMES_ATTRIBUTE_ID);
+
+				if (de == null) {
+					System.err.println("Unexpected service - missed attribute");
+
+					continue;
+				}
+
+				// get the images names from this attribute
+				Enumeration deEnum = (Enumeration) de.getValue();
+
+				Hashtable h = new Hashtable();
+				while (deEnum.hasMoreElements()) {
+					de = (DataElement) deEnum.nextElement();
+
+					String name = (String) de.getValue();
+					// System.out.println("name is : " + name);
+					int idx = -1;
+					try {
+						idx = name.indexOf(":");
+						// System.out.println("index: " + idx);
+
+					} catch (Exception e) {
+						System.err.println("error in tag :" + name);
+						e.printStackTrace();
+						continue;
+
+					}
+					if (idx == -1) {
+						continue;
+					}
+					String tag = name.substring(0, idx);
+					String value = name.substring(idx + 1);
+					// System.out.println("result->" + tag + " " + value);
+					h.put(tag, value);
+				}
+				Profile p = null;
+				try {
+					p = new Profile();
+				} catch (IOException e) {
+					e.printStackTrace();
+					continue;
+				}
+				if (p != null && !p.loadFromHashtable(h)) {
+					System.err.println("some fields are missing: " + h);
+					continue;
+				}
+				FriendWrapper fw = new FriendWrapper(true, p, sr, (String) h
+						.get("interests"));
+				if (base.containsKey(fw.getKey())) {
+					base.remove(fw.getKey());
+				}
+				base.put(fw.getKey(), fw);
+			}
+
+		} catch (Exception e) {
+			System.err.println("error in updating base");
+			e.printStackTrace();
+		}
+	}
+
+	public Vector getBaseOnlineKeys() {
+		Enumeration keys = base.keys();
+		Vector ret = new Vector();
+		while (keys.hasMoreElements()) {
+			String key = (String) keys.nextElement();
+			FriendWrapper fw = (FriendWrapper) base.get(key);
+			if (fw.isOnline()) {
+				ret.addElement(key);
+			}
+		}
+		return ret;
+	}
+
+	public FriendWrapper loadFromBase(String profileKeyToLoad) {
+		if (base.containsKey(profileKeyToLoad))
+			return (FriendWrapper) base.get(profileKeyToLoad);
+		return null;
 	}
 }

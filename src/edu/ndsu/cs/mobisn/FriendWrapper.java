@@ -4,10 +4,12 @@ import javax.bluetooth.ServiceRecord;
 
 public class FriendWrapper {
 
-	boolean online=false;
-	Profile profile ;
-	ServiceRecord serviceRecord;
-	String interests;
+	private boolean online=false;
+	private Profile profile ;
+	private ServiceRecord serviceRecord;
+	private String interests;
+	private boolean messages = false;
+	
 	public FriendWrapper(boolean isOnline, Profile p, ServiceRecord sr,
 			String interests) {
 		super();
@@ -33,6 +35,12 @@ public class FriendWrapper {
 	}
 	public void setOnline(boolean online) {
 		this.online = online;
+	}
+	public void setHasMessages(boolean messages) {
+		this.messages = messages;
+	}
+	public boolean hasMessages() {
+		return messages;
 	}
 	
 }
