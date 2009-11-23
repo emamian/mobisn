@@ -13,7 +13,6 @@ import javax.bluetooth.ServiceRecord;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
-import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -127,6 +126,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		if (mobiClient != null) {
 			mobiClient.destroy();
 		}
+		if(discoveryClient != null)
+			discoveryClient.destroy();
 	}
 
 	/**
