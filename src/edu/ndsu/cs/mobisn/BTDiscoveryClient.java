@@ -19,19 +19,19 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	/** The attribute id of the record item with images names. */
 	private static final int IMAGES_NAMES_ATTRIBUTE_ID = 0x4321;
 
-	/** Shows the engine is ready to work. */
-	private static final int READY = 0;
-	
+	// /** Shows the engine is ready to work. */
+	// private static final int READY = 0;
+	//
+	// /** Shows the engine is searching bluetooth devices. */
+	// private static final int DEVICE_SEARCH = 1;
+	//
+	// /** Shows the engine is searching bluetooth services. */
+	// private static final int SERVICE_SEARCH = 2;
+
+	/** update interval for agent */
 	private static final int interval = 5000;
-
-	/** Shows the engine is searching bluetooth devices. */
-	private static final int DEVICE_SEARCH = 1;
-
-	/** Shows the engine is searching bluetooth services. */
-	private static final int SERVICE_SEARCH = 2;
-
 	/** Keeps the current state of engine. */
-	private int state = READY;
+	// private int state = READY;
 
 	/** Process the search/download requests. */
 	private Thread processorThread;
@@ -65,10 +65,9 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 
 	private boolean isBTReady;
 
-	
-	
-	public BTDiscoveryClient(MobisnMIDlet parent) throws BluetoothStateException {
-		super();		
+	public BTDiscoveryClient(MobisnMIDlet parent)
+			throws BluetoothStateException {
+		super();
 		this.parent = parent;
 		isBTReady = false;
 		// create/get a local device and discovery agent
@@ -112,7 +111,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	private synchronized void processSearch() {
 		while (!isClosed) {
 			// wait for new search request from user
-			state = READY;
+			// state = READY;
 
 			try {
 				System.out.println("heartbeat------------------");
@@ -122,13 +121,13 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 
 				return;
 			}
-//			System.out.println("heart beat !");
+			// System.out.println("heart beat !");
 
 			// check the component is destroyed
 			if (isClosed) {
 				return;
 			}
-//			System.out.println("search devices");
+			// System.out.println("search devices");
 			// search for devices
 			if (!searchDevices()) {
 				return;
@@ -136,15 +135,15 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 				continue;
 			}
 
-//			System.out.println("search services");
+			// System.out.println("search services");
 			// search for services now
 			if (!searchServices()) {
 				return;
 			} else if (records.size() == 0) {
-//			System.out.println("heart beat ! (no device)");
+				// System.out.println("heart beat ! (no device)");
 				continue;
 			}
-			
+
 			// ok, something was found - add results to base hashtable
 			parent.updateBase(records);
 			System.out.println("-------------------heart beat ! (some device)");
@@ -169,7 +168,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	 * Remember the discType and process its evaluation in another thread.
 	 */
 	public void inquiryCompleted(int discType) {
-//		System.out.println("inquiry complete");
+		// System.out.println("inquiry complete");
 		this.discType = discType;
 
 		synchronized (this) {
@@ -180,13 +179,13 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
 		for (int i = 0; i < servRecord.length; i++) {
 			records.addElement(servRecord[i]);
-//			System.out.println("agent: 1 service discovered");
+			// System.out.println("agent: 1 service discovered");
 		}
 	}
 
 	public void serviceSearchCompleted(int transID, int respCode) {
 		try {
-//			System.out.println("service search complete");
+			// System.out.println("service search complete");
 			// first, find the service search transaction index
 			int index = -1;
 
@@ -226,6 +225,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 			e.printStackTrace();
 		}
 	}
+
 	/**
 	 * Search for bluetooth devices.
 	 * 
@@ -233,7 +233,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	 */
 	private boolean searchDevices() {
 		// ok, start a new search then
-		state = DEVICE_SEARCH;
+		// state = DEVICE_SEARCH;
 		devices.removeAllElements();
 
 		try {
@@ -298,7 +298,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	 * @return false if should end the component work.
 	 */
 	private boolean searchServices() {
-		state = SERVICE_SEARCH;
+		// state = SERVICE_SEARCH;
 		records.removeAllElements();
 		searchIDs = new int[devices.size()];
 
@@ -345,10 +345,10 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 		if (records.size() == 0) {
 			parent.informDiscoverySearchError("No proper services were found");
 		}
-		
 
 		return true;
 	}
+
 	/**
 	 * Destroy a work with bluetooth - exits the accepting thread and close
 	 * notifier.

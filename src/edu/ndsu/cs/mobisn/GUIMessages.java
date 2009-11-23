@@ -75,7 +75,7 @@ public class GUIMessages implements CommandListener{
 		messageForm.append(new StringItem("sender: ", mw.getSenderFullName()));
 		messageForm.append(new StringItem("time: ", mw.getTime()));
 		messageForm.append(new StringItem("body: ", mw.getSms()));
-		Display.getDisplay(parent).setCurrent(messageForm);
+		parent.changeDisplay(messageForm);
 		
 	}
 
@@ -95,6 +95,6 @@ public class GUIMessages implements CommandListener{
 			String title = mw.getSenderFullName()+" ("+mw.getTime()+")";
 			list.append(title, null);
 		}
-		Display.getDisplay(parent).setCurrent(list);		
+		parent.changeDisplay(list);
 	}
 }

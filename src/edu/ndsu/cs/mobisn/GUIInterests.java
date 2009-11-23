@@ -76,7 +76,7 @@ public class GUIInterests implements CommandListener {
 	private void showAlert(String msg) {
 			Alert al = new Alert("Error", msg, null, AlertType.ERROR);
 			al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-			Display.getDisplay(parent).setCurrent(al, lst);
+			parent.changeDisplay(lst);
 	}
 
 	boolean setInterest(NodeData node) {
@@ -103,7 +103,7 @@ public class GUIInterests implements CommandListener {
 		 * chGroup.setSelectedFlags(selectedFlags);
 		 * chGroup.setItemCommandListener(this); frm.append(chGroup);
 		 * frm.setItemStateListener(this);
-		 * Display.getDisplay(parent).setCurrent(frm);
+		 * parent.changeDisplay(frm);
 		 */
 		if (lst == null) {
 			lst = new List(interest.getTitle(), List.IMPLICIT);
@@ -119,7 +119,7 @@ public class GUIInterests implements CommandListener {
 			NodeData ch = (NodeData) childs.elementAt(i);
 			lst.append(ch.getTitle(), checked[(ch.isInterested()?1:0)]);
 		}
-		Display.getDisplay(parent).setCurrent(lst);
+		parent.changeDisplay(lst);
 	}
 
 	// public void itemStateChanged(Item item) {

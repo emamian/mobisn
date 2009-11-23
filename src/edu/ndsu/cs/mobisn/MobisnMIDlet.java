@@ -6,12 +6,14 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import javax.bluetooth.BluetoothStateException;
 import javax.bluetooth.DataElement;
 import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
+import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -59,6 +61,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private Hashtable messages = new Hashtable();
 
 	private BTDiscoveryClient discoveryClient = null;
+
+	private boolean inMainMenu = false;
 
 	// private static final Logger logger = Logger.getLogger("BTMobiClient");
 	/**
@@ -147,6 +151,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	void show() {
 		menu.set(4, "messages (" + messages.size() + ")", null);
 		Display.getDisplay(this).setCurrent(menu);
+		inMainMenu = true;
 	}
 
 	/**
@@ -168,7 +173,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			loadingForm.addCommand(EXIT_CMD);
 			loadingForm.setCommandListener(this);
 			loadingForm.append("Loading...");
-
 			profile = new Profile();
 			try {
 				mobiServer = new GUIMobiServer(this);
@@ -187,12 +191,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				return;
 			}
 			// start discovery agent
-			try {
-				discoveryClient = new BTDiscoveryClient(this);
-			} catch (Exception e) {
-				System.err.println("could not initiate discovery agent");
-				e.printStackTrace();
-			}
+			discoveryClient = new BTDiscoveryClient(this);
+			
 			menu.addCommand(EXIT_CMD);
 			menu.addCommand(OK_CMD);
 			menu.setCommandListener(this);
@@ -212,6 +212,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 			menu.setSelectedIndex(1, true);
 
+		} catch (BluetoothStateException e) {
+			System.err.println("could not discovery agent.");
+			e.printStackTrace();
 		} catch (Exception e) {
 			System.err.println("could not initialize DemoMidlet.");
 			e.printStackTrace();
@@ -235,7 +238,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			String senderDeviceID = RemoteDevice.getRemoteDevice(conn)
 					.getBluetoothAddress();
 			mw.setSenderDeviceID(senderDeviceID);
-//			System.out.println("new message from device: " + senderDeviceID);
+			// System.out.println("new message from device: " + senderDeviceID);
 			// make notice of the sender in base hashtable
 			if (base.containsKey(senderDeviceID)) {
 				FriendWrapper fw = (FriendWrapper) base.get(senderDeviceID);
@@ -251,6 +254,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				// record info)
 			}
 			messages.put(senderDeviceID + d.toString(), mw);
+			if(inMainMenu){
+				show();
+			}
 		} catch (IOException e1) {
 			System.err.println("could not find senders bluetooth address");
 			e1.printStackTrace();
@@ -318,7 +324,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 				// get the attribute with images names
 				DataElement de = sr
-						.getAttributeValue(BTMobiClient.IMAGES_NAMES_ATTRIBUTE_ID);
+						.getAttributeValue(BTMobiClient.MOBISN_PROFILE_ATTRIBUTE_ID);
 
 				if (de == null) {
 					System.err.println("Unexpected service - missed attribute");
@@ -332,7 +338,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				Hashtable h = new Hashtable();
 				while (deEnum.hasMoreElements()) {
 					de = (DataElement) deEnum.nextElement();
-
 					String name = (String) de.getValue();
 					// System.out.println("name is : " + name);
 					int idx = -1;
@@ -396,5 +401,14 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		if (base.containsKey(profileKeyToLoad))
 			return (FriendWrapper) base.get(profileKeyToLoad);
 		return null;
+	}
+	public void changeDisplay(Displayable d){
+		Display.getDisplay(this).setCurrent(d);
+		inMainMenu  = false;
+	}
+
+	public void changeDisplay(Alert al, Displayable destination) {
+		Display.getDisplay(this).setCurrent(al, destination);
+		inMainMenu = false;
 	}
 }

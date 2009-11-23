@@ -378,14 +378,16 @@ public class BTMobiServer implements Runnable {
 
 		record.setAttributeValue(IMAGES_NAMES_ATTRIBUTE_ID, de);
 
-		if(isPublished)
-			System.out.println("profile online "+myProfile.getFamily());
-		profileOnline  = isPublished;
 		try {
 			localDevice.updateRecord(record);
+			if(isPublished)
+				System.out.println("profile online: "+myProfile.getFamily());
+			else
+				System.out.println("profile offline: "+myProfile.getFamily());
+				
+			profileOnline  = isPublished;
 		} catch (ServiceRegistrationException e) {
 			System.err.println("Can't update profile on serviceRecord");
-
 			return false;
 		}
 		return true;

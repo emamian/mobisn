@@ -75,7 +75,7 @@ public class GUIMobiServer implements CommandListener {
 					"Can't update base ("+(isPublished?"publish":"remove")+" profile)", null,
 					AlertType.ERROR);
 			al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-			Display.getDisplay(parent).setCurrent(al, serverConfigurationList);
+			parent.changeDisplay(al, serverConfigurationList);
 			return;
 		}
 		if(isPublished){
@@ -90,7 +90,7 @@ public class GUIMobiServer implements CommandListener {
 	}
 
 	public void show(){
-		Display.getDisplay(parent).setCurrent(serverConfigurationList);
+		parent.changeDisplay(serverConfigurationList);
 	}
 	/**
 	 * Process the command event.
@@ -107,13 +107,13 @@ public class GUIMobiServer implements CommandListener {
 		}
 
 		if ((c == backCommand) && (d == helpScreen)) {
-			Display.getDisplay(parent).setCurrent(serverConfigurationList);
+			parent.changeDisplay(serverConfigurationList);
 
 			return;
 		}
 
 		if (c == helpCommand) {
-			Display.getDisplay(parent).setCurrent(helpScreen);
+			parent.changeDisplay(helpScreen);
 
 			return;
 		}

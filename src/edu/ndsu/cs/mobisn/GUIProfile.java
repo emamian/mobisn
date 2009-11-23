@@ -65,7 +65,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 			Item item = (Item) items.elementAt(i);
 			profileScreen.append(item);
 		}
-		Display.getDisplay(parent).setCurrent(profileScreen);
+		parent.changeDisplay(profileScreen);
 	}
 
 	private void loadProfileData() {
@@ -112,7 +112,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 		textbox.setCommandListener(this);
 
 		profileScreen.setCommandListener(this);
-		Display.getDisplay(parent).setCurrent(textbox);
+		parent.changeDisplay(textbox);
 
 	}
 
