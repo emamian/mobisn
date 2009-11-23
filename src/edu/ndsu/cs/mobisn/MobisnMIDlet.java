@@ -23,6 +23,8 @@ import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDlet;
 
 public class MobisnMIDlet extends MIDlet implements CommandListener {
+
+	private RoutingTable routingTable = new RoutingTable();
 	/** The messages are shown in this demo this amount of time. */
 	static final int ALERT_TIMEOUT = 2000;
 
@@ -126,7 +128,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		if (mobiClient != null) {
 			mobiClient.destroy();
 		}
-		if(discoveryClient != null)
+		if (discoveryClient != null)
 			discoveryClient.destroy();
 	}
 
@@ -193,7 +195,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			}
 			// start discovery agent
 			discoveryClient = new BTDiscoveryClient(this);
-			
+
 			menu.addCommand(EXIT_CMD);
 			menu.addCommand(OK_CMD);
 			menu.setCommandListener(this);
@@ -255,7 +257,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				// record info)
 			}
 			messages.put(senderDeviceID + d.toString(), mw);
-			if(inMainMenu){
+			if (inMainMenu) {
 				show();
 			}
 		} catch (IOException e1) {
@@ -269,7 +271,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	}
 
 	public Hashtable getMessages() {
-		// TODO Auto-generated method stub
 		return this.messages;
 	}
 
@@ -320,13 +321,22 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	public void updateBase(Vector records) {
 		try {
 			clearBase(); // clear devices that we don't have messages from
+			clearRoutingTable();
 			for (int i = 0; i < records.size(); i++) {
 				ServiceRecord sr = (ServiceRecord) records.elementAt(i);
 
 				// get the attribute with images names
 				DataElement de = sr
 						.getAttributeValue(BTMobiClient.MOBISN_PROFILE_ATTRIBUTE_ID);
+				DataElement deRoutingTable = sr
+						.getAttributeValue(BTMobiClient.MOBISN_RT_ATTRIBUTE_ID);
 
+				if (deRoutingTable == null) {
+					System.err
+							.println("Unexpected serviceRecord - missed attribute routing table");
+				} else {
+					routingTable.loadFromDataElement(deRoutingTable);
+				}
 				if (de == null) {
 					System.err.println("Unexpected service - missed attribute");
 
@@ -373,9 +383,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				}
 				FriendWrapper fw = new FriendWrapper(true, p, sr, (String) h
 						.get("interests"));
-				if (base.containsKey(fw.getKey())) {
-					base.remove(fw.getKey());
-				}
+				// if (base.containsKey(fw.getKey())) {
+				// base.remove(fw.getKey());
+				// }
 				base.put(fw.getKey(), fw);
 			}
 
@@ -384,6 +394,17 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			e.printStackTrace();
 		}
 	}
+
+	private void clearRoutingTable() {
+		routingTable.clear();
+	}
+
+	// private void updateRoutingTable(RoutingTable rt) {
+	// for (int i = 1; i < RoutingTable.MAX_LEVEL; i++) {
+	// Hashtable h = rt.getLevel(i);
+	// routingTable.addHashLevel(i+1, h);
+	// }
+	// }
 
 	public Vector getBaseOnlineKeys() {
 		Enumeration keys = base.keys();
@@ -403,13 +424,30 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			return (FriendWrapper) base.get(profileKeyToLoad);
 		return null;
 	}
-	public void changeDisplay(Displayable d){
+
+	public void changeDisplay(Displayable d) {
 		Display.getDisplay(this).setCurrent(d);
-		inMainMenu  = false;
+		inMainMenu = false;
 	}
 
 	public void changeDisplay(Alert al, Displayable destination) {
 		Display.getDisplay(this).setCurrent(al, destination);
 		inMainMenu = false;
+	}
+
+	// returns routing table
+	public DataElement getMyRT() {
+		DataElement de = new DataElement(DataElement.DATSEQ);
+
+		Enumeration keys = base.keys();
+		while (keys.hasMoreElements()) {
+			String key = (String) keys.nextElement();
+			FriendWrapper fw = (FriendWrapper) base.get(key);
+			if (fw.isOnline()) {
+				de.addElement(new DataElement(DataElement.STRING, fw.getKey()
+						+ ":" + fw.getInterests()));
+			}
+		}
+		return de;
 	}
 }
