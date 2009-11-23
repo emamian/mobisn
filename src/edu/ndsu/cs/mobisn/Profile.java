@@ -11,6 +11,8 @@ import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.ImageItem;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.StringItem;
+import javax.microedition.rms.RecordStore;
+import javax.microedition.rms.RecordStoreNotFoundException;
 
 public class Profile {
 
@@ -20,6 +22,8 @@ public class Profile {
 	private String imagePath = "";
 	private Interests interests = new Interests();
 	private String name;
+	private String recordName = "InterestsData";
+	private int RecordID = 0;
 
 	public Profile() throws IOException {
 		super();
@@ -65,8 +69,70 @@ public class Profile {
 		this.age = age;
 	}
 
-	
+	public void saveStringInterests()
+	{
+		String record = interests.getInterestsString();
+		try{
+			//Question just delete the RecordID from last save?  Or make it simple and delete the whole recordStore...
+			if(RecordID == 0){
+				RecordStore.deleteRecordStore(recordName);
+			}
+			else {
+				RecordStore rs1 = RecordStore.openRecordStore(recordName, true);
+				rs1.deleteRecord(RecordID);
+				rs1.closeRecordStore();				
+			}
+		}
+		catch(RecordStoreNotFoundException rse){
+			//swallow it.
+			System.out.println("RS not found yet.");
+			//e.printStackTrace();
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+		//after cleaning up old record, 
+		try
+		{
+			RecordStore rs = RecordStore.openRecordStore(recordName, true);
+			RecordID = rs.addRecord(record.getBytes(), 0, record.getBytes().length); // Add Record
+			
+			rs.closeRecordStore();
+			System.out.println("Save interests succeeded");
 
+		}
+		catch (Exception e)
+		{
+			System.out.println("Error in saving record" + e.getMessage());
+		}
+		
+	}
+	
+	public String loadStringInterests(){
+		String record = null;
+		try
+		{
+			RecordStore rs = RecordStore.openRecordStore(recordName, false);
+			byte[] bb = rs.getRecord(1);
+			
+			record = new String(bb,0, bb.length);
+			//record = new NodeData()
+			System.out.println("Profile record loaded from disk;");
+			rs.closeRecordStore();
+		}
+		catch(RecordStoreNotFoundException rse){
+			//swallow it.
+			System.out.println("RS not found yet.");
+			//e.printStackTrace();
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		return record;
+	}
+	
 	public String getAge() {
 		return age;
 	}
