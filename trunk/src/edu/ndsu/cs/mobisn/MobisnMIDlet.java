@@ -331,6 +331,13 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				DataElement deRoutingTable = sr
 						.getAttributeValue(BTMobiClient.MOBISN_RT_ATTRIBUTE_ID);
 
+				System.out.println("input Routing Table: ------");
+				if (de == null) {
+					System.out.println("no elemtn in routing table");
+				} else
+					getDataElementString(de);
+				System.out.println("input Routing Table: ------end");
+
 				if (deRoutingTable == null) {
 					System.err
 							.println("Unexpected serviceRecord - missed attribute routing table");
@@ -348,9 +355,11 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 				Hashtable h = new Hashtable();
 				while (deEnum.hasMoreElements()) {
-					de = (DataElement) deEnum.nextElement();
-					String name = (String) de.getValue();
-					// System.out.println("name is : " + name);
+					DataElement tmp = (DataElement) deEnum.nextElement();
+					if(tmp.getDataType() == DataElement.STRING)
+						System.out.println("yest");
+					String name = (String) tmp.getValue();
+					System.out.println("name is : " + name);
 					int idx = -1;
 					try {
 						idx = name.indexOf(":");
@@ -444,10 +453,36 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			String key = (String) keys.nextElement();
 			FriendWrapper fw = (FriendWrapper) base.get(key);
 			if (fw.isOnline()) {
-				de.addElement(new DataElement(DataElement.STRING, fw.getKey()
-						+ ":" + fw.getInterests()));
+				DataElement tmp;
+				tmp = new DataElement(DataElement.STRING,
+						(fw.getKey() + ":" + fw.getInterests()));
+				de.addElement(tmp);
 			}
 		}
+		System.out.println("Routing Table: ------");
+		if (de == null) {
+			System.out.println("no elemtn in routing table");
+		} else
+			getDataElementString(de);
+		System.out.println("Routing Table: ------end");
 		return de;
+	}
+
+	public String getDataElementString(DataElement de) {
+		switch (de.getDataType()) {
+		case DataElement.DATSEQ:
+			String ret = "{dataSeq:";
+			Enumeration en = (Enumeration) de.getValue();
+			while (en.hasMoreElements()) {
+				DataElement d = (DataElement) en.nextElement();
+				ret += getDataElementString(d) + ",";
+			}
+			ret += "}";
+			return ret;
+		case DataElement.STRING:
+			return (String) de.getValue();
+		default:
+			return "unknowm DataElement type: " + de.toString();
+		}
 	}
 }

@@ -373,9 +373,6 @@ public class BTMobiServer implements Runnable {
 			// put profiles summery in serviceRecord
 			de = myProfile.getServiceRecordElement();
 			de2 = parent.getMyRT();
-			System.out.println(de2.toString());
-			if(de2 == null)
-				System.out.println("cann not get my routing table as dataelement");
 		} else {
 			de = new DataElement(DataElement.DATSEQ);
 			de2 = new DataElement(DataElement.DATSEQ);
