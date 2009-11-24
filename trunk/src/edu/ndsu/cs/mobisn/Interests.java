@@ -115,7 +115,7 @@ public class Interests {
 				v.addElement(g.getChilds().elementAt(i));
 			}
 		}
-		System.out.println(ret.toString());
+//		System.out.println(ret.toString());
 		return ret;
 	}
 

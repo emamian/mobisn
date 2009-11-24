@@ -185,8 +185,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				showLoadErr("Can't initialize bluetooth server");
 				return;
 			}
+			discoveryClient = new BTDiscoveryClient(this);
 			try {
-				mobiClient = new GUIMobiClient(this);
+				mobiClient = new GUIMobiClient(this,discoveryClient);
 			} catch (Exception e) {
 				System.err.println("Can't initialize bluetooth client: " + e);
 				e.printStackTrace();
@@ -194,7 +195,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				return;
 			}
 			// start discovery agent
-			discoveryClient = new BTDiscoveryClient(this);
 
 			menu.addCommand(EXIT_CMD);
 			menu.addCommand(OK_CMD);
@@ -356,10 +356,10 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				Hashtable h = new Hashtable();
 				while (deEnum.hasMoreElements()) {
 					DataElement tmp = (DataElement) deEnum.nextElement();
-					if(tmp.getDataType() == DataElement.STRING)
-						System.out.println("yest");
+//					if(tmp.getDataType() == DataElement.STRING)
+//						System.out.println("yest");
 					String name = (String) tmp.getValue();
-					System.out.println("name is : " + name);
+//					System.out.println("name is : " + name);
 					int idx = -1;
 					try {
 						idx = name.indexOf(":");
