@@ -3,23 +3,17 @@ package edu.ndsu.cs.mobisn;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
 
 import javax.bluetooth.BluetoothStateException;
-import javax.bluetooth.DeviceClass;
-import javax.bluetooth.DiscoveryAgent;
-import javax.bluetooth.DiscoveryListener;
-import javax.bluetooth.LocalDevice;
-import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Image;
 
-public class BTMobiClient implements Runnable, DiscoveryListener {
+public class BTMobiClient implements Runnable {
 	/** Describes this server */
-	
+
 	/** The attribute id of the record item with profile info. */
 	public static final int MOBISN_PROFILE_ATTRIBUTE_ID = 0x4321;
 	/** The attribute id of the record item with routing table info. */
@@ -28,17 +22,17 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	/** Shows the engine is ready to work. */
 	private static final int READY = 0;
 
-	/** Shows the engine is searching bluetooth devices. */
-	private static final int DEVICE_SEARCH = 1;
-
-	/** Shows the engine is searching bluetooth services. */
-	private static final int SERVICE_SEARCH = 2;
-
 	/** Keeps the current state of engine. */
 	private int state = READY;
+	/** Shows the engine is searching bluetooth devices. */
+//	private static final int DEVICE_SEARCH = 1;
+	/** Shows the engine is searching bluetooth services. */
+//	private static final int SERVICE_SEARCH = 2;
+	private static final int WAITING_FOR_SEARCH = 3;
+	private static final int PRESENTING_RESULTS = 4;
 
 	/** Keeps the discovery agent reference. */
-	private DiscoveryAgent discoveryAgent;
+//	private DiscoveryAgent discoveryAgent;
 
 	/** Keeps the parent reference to process specific actions. */
 	private GUIMobiClient parent;
@@ -50,16 +44,16 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	private Thread processorThread;
 
 	/** Collects the remote devices found during a search. */
-	private Vector /* RemoteDevice */devices = new Vector();
+//	private Vector /* RemoteDevice */devices = new Vector();
 
 	/** Collects the services found during a search. */
-	private Vector /* ServiceRecord */records = new Vector();
+//	private Vector /* ServiceRecord */records = new Vector();
 
 	/** Keeps the device discovery return code. */
-	private int discType;
+//	private int discType;
 
 	/** Keeps the services search IDs (just to be able to cancel them). */
-	private int[] searchIDs;
+//	private int[] searchIDs;
 
 	/** Keeps the image name to be load. */
 	private String profileKeyToLoad;
@@ -79,22 +73,30 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 
 	private String smsToSend = "";
 
+	private BTDiscoveryClient btDiscoveryClient;
+	private boolean searchCanceled = false;
+	private boolean searchSuccessful;
+
 	/**
 	 * Constructs the bluetooth server, but it is initialized in the different
 	 * thread to "avoid dead lock".
 	 * 
+	 * @param discoveryClient
+	 * 
 	 * @throws BluetoothStateException
 	 */
-	BTMobiClient(GUIMobiClient parent) throws BluetoothStateException {
+	BTMobiClient(GUIMobiClient parent, BTDiscoveryClient discoveryClient)
+			throws BluetoothStateException {
 		this.parent = parent;
+		this.btDiscoveryClient = discoveryClient;
 		isBTReady = false;
 		// base = parent.getBase();
 		// if (base == null)
 		// System.err.println("base hashtable cannot be null");
 
 		// create/get a local device and discovery agent
-		LocalDevice localDevice = LocalDevice.getLocalDevice();
-		discoveryAgent = localDevice.getDiscoveryAgent();
+//		LocalDevice localDevice = LocalDevice.getLocalDevice();
+//		discoveryAgent = localDevice.getDiscoveryAgent();
 
 		// remember we've reached this point.
 		isBTReady = true;
@@ -124,10 +126,11 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		uuidSet[1] = BTMobiServer.MOBISN_SERVER_UUID;
 
 		// we need an only service attribute actually
-		attrSet = new int[1];
+		attrSet = new int[2];
 
 		// it's "images names" one
 		attrSet[0] = MOBISN_PROFILE_ATTRIBUTE_ID;
+		attrSet[1] = MOBISN_RT_ATTRIBUTE_ID;
 
 		// start processing the images search/download
 		processImagesSearchDownload();
@@ -139,9 +142,11 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	 */
 	private synchronized void processImagesSearchDownload() {
 		try {
-//			System.out.println("process search download");
+			// System.out.println("process search download");
 			while (!isClosed) {
 				// wait for new search request from user
+				searchCanceled =false;
+				searchSuccessful = false;
 				state = READY;
 
 				try {
@@ -159,21 +164,41 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 				}
 				System.out.println("search devices");
 				// search for devices
-				if (!searchDevices()) {
+				try {
+					state = WAITING_FOR_SEARCH;
+					System.out.println("bt_client waiting state");
+					btDiscoveryClient.waitForSearchComplete(this);
+					wait();
+				} catch (InterruptedException e) {
+					System.err.println("bt_client Unexpected interruption - waiting for search: " + e);
 					return;
-				} else if (devices.size() == 0) {
-					continue;
 				}
+				// check the component is destroyed
+				if (isClosed) {
+					return;
+				}
+				if(searchCanceled ){
+					break;
+				}
+				if(!searchSuccessful)
+					parent.informSearchError("search not successful");
 
-				System.out.println("search services");
-				// search for services now
-				if (!searchServices()) {
-					return;
-				} else if (records.size() == 0) {
-					continue;
-				}
+				// if (!searchDevices()) {
+				// return;
+				// } else if (devices.size() == 0) {
+				// continue;
+				// }
+				//
+				// System.out.println("search services");
+				// // search for services now
+				// if (!searchServices()) {
+				// return;
+				// } else if (records.size() == 0) {
+				// continue;
+				// }
+
 				System.out.println("present results");
-
+				state = PRESENTING_RESULTS;
 				// ok, something was found - present the result to user now
 				if (!presentUserSearchResults()) {
 					// services are found, but no names there
@@ -188,7 +213,9 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					try {
 						wait();
 					} catch (InterruptedException e) {
-						System.err.println("Unexpected interruption - bt_client waiting for profile selection: " + e);
+						System.err
+								.println("Unexpected interruption - bt_client waiting for profile selection: "
+										+ e);
 
 						return;
 					}
@@ -277,7 +304,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		return true;
 	}
 
-	private synchronized boolean loadFriendProfile() {
+	private boolean loadFriendProfile() {
 		// load selected image data
 		Profile p = loadProfileFromBase();
 		ServiceRecord sr = loadServiceRecordFromBase();
@@ -425,71 +452,70 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		return fw.getServiceRecord();
 	}
 
-	/**
-	 * Search for bluetooth devices.
-	 * 
-	 * @return false if should end the component work.
-	 */
-	private boolean searchDevices() {
-		// ok, start a new search then
-		state = DEVICE_SEARCH;
-		devices.removeAllElements();
-
-		try {
-			discoveryAgent.startInquiry(DiscoveryAgent.GIAC, this);
-		} catch (BluetoothStateException e) {
-			System.err.println("Can't start inquiry now: " + e);
-			parent.informSearchError("Can't start device search");
-
-			return true;
-		}
-
-		try {
-			wait(); // until devices are found
-		} catch (InterruptedException e) {
-			System.err.println("Unexpected interruption: " + e);
-
-			return false;
-		}
-
-		// this "wake up" may be caused by 'destroy' call
-		if (isClosed) {
-			return false;
-		}
-
-		// no?, ok, let's check the return code then
-		switch (discType) {
-		case INQUIRY_ERROR:
-			parent.informSearchError("Device discovering error...");
-
-			// fall through
-		case INQUIRY_TERMINATED:
-			// make sure no garbage in found devices list
-			devices.removeAllElements();
-
-			// nothing to report - go to next request
-			break;
-
-		case INQUIRY_COMPLETED:
-
-			if (devices.size() == 0) {
-				parent.informSearchError("No devices in range");
-			}
-
-			// go to service search now
-			break;
-
-		default:
-			// what kind of system you are?... :(
-			System.err.println("system error:"
-					+ " unexpected device discovery code: " + discType);
-			destroy();
-
-			return false;
-		}
-
-		return true;
-	}
+//	/**
+//	 * Search for bluetooth devices.
+//	 * 
+//	 * @return false if should end the component work.
+//	 */
+//	private boolean searchDevices() {
+//		// ok, start a new search then
+//		state = DEVICE_SEARCH;
+//		devices.removeAllElements();
+//
+//		try {
+//			discoveryAgent.startInquiry(DiscoveryAgent.GIAC, this);
+//		} catch (BluetoothStateException e) {
+//			System.err.println("Can't start inquiry now: " + e.getMessage());
+//			parent.informSearchError("Can't start device search");
+//			return true;
+//		}
+//
+//		try {
+//			wait(); // until devices are found
+//		} catch (InterruptedException e) {
+//			System.err.println("Unexpected interruption: " + e);
+//
+//			return false;
+//		}
+//
+//		// this "wake up" may be caused by 'destroy' call
+//		if (isClosed) {
+//			return false;
+//		}
+//
+//		// no?, ok, let's check the return code then
+//		switch (discType) {
+//		case INQUIRY_ERROR:
+//			parent.informSearchError("Device discovering error...");
+//
+//			// fall through
+//		case INQUIRY_TERMINATED:
+//			// make sure no garbage in found devices list
+//			devices.removeAllElements();
+//
+//			// nothing to report - go to next request
+//			break;
+//
+//		case INQUIRY_COMPLETED:
+//
+//			if (devices.size() == 0) {
+//				parent.informSearchError("No devices in range");
+//			}
+//
+//			// go to service search now
+//			break;
+//
+//		default:
+//			// what kind of system you are?... :(
+//			System.err.println("system error:"
+//					+ " unexpected device discovery code: " + discType);
+//			destroy();
+//
+//			return false;
+//		}
+//
+//		return true;
+//	}
 
 	/**
 	 * Destroy a work with bluetooth - exits the accepting thread and close
@@ -509,62 +535,62 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 		} // ignore
 	}
 
-	/**
-	 * Search for proper service.
-	 * 
-	 * @return false if should end the component work.
-	 */
-	private boolean searchServices() {
-		state = SERVICE_SEARCH;
-		records.removeAllElements();
-		searchIDs = new int[devices.size()];
-
-		boolean isSearchStarted = false;
-
-		for (int i = 0; i < devices.size(); i++) {
-			RemoteDevice rd = (RemoteDevice) devices.elementAt(i);
-
-			try {
-				searchIDs[i] = discoveryAgent.searchServices(attrSet, uuidSet,
-						rd, this);
-			} catch (BluetoothStateException e) {
-				System.err.println("Can't search services for: "
-						+ rd.getBluetoothAddress() + " due to " + e);
-				searchIDs[i] = -1;
-
-				continue;
-			}
-
-			isSearchStarted = true;
-		}
-
-		// at least one of the services search should be found
-		if (!isSearchStarted) {
-			parent.informSearchError("Can't search services.");
-
-			return true;
-		}
-
-		try {
-			wait(); // until services are found
-		} catch (InterruptedException e) {
-			System.err.println("Unexpected interruption: " + e);
-
-			return false;
-		}
-
-		// this "wake up" may be caused by 'destroy' call
-		if (isClosed) {
-			return false;
-		}
-
-		// actually, no services were found
-		if (records.size() == 0) {
-			parent.informSearchError("No proper services were found");
-		}
-
-		return true;
-	}
+//	/**
+//	 * Search for proper service.
+//	 * 
+//	 * @return false if should end the component work.
+//	 */
+//	private boolean searchServices() {
+//		state = SERVICE_SEARCH;
+//		records.removeAllElements();
+//		searchIDs = new int[devices.size()];
+//
+//		boolean isSearchStarted = false;
+//
+//		for (int i = 0; i < devices.size(); i++) {
+//			RemoteDevice rd = (RemoteDevice) devices.elementAt(i);
+//
+//			try {
+//				searchIDs[i] = discoveryAgent.searchServices(attrSet, uuidSet,
+//						rd, this);
+//			} catch (BluetoothStateException e) {
+//				System.err.println("Can't search services for: "
+//						+ rd.getBluetoothAddress() + " due to " + e);
+//				searchIDs[i] = -1;
+//
+//				continue;
+//			}
+//
+//			isSearchStarted = true;
+//		}
+//
+//		// at least one of the services search should be found
+//		if (!isSearchStarted) {
+//			parent.informSearchError("Can't search services.");
+//
+//			return true;
+//		}
+//
+//		try {
+//			wait(); // until services are found
+//		} catch (InterruptedException e) {
+//			System.err.println("Unexpected interruption: " + e);
+//
+//			return false;
+//		}
+//
+//		// this "wake up" may be caused by 'destroy' call
+//		if (isClosed) {
+//			return false;
+//		}
+//
+//		// actually, no services were found
+//		if (records.size() == 0) {
+//			parent.informSearchError("No proper services were found");
+//		}
+//
+//		return true;
+//	}
 
 	/**
 	 * Gets the collection of the names from the services, prepares a hashtable
@@ -574,19 +600,24 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	 * @return false if no names in found services.
 	 */
 	private boolean presentUserSearchResults() {
-		parent.updateBase(records);
+		// parent.updateBase(records);
 		return parent.showFriendsNames();
 	}
 
 	/** Cancel's the devices/services search. */
-	void cancelSearch() {
+	// since we use discoveryClient now , this function is useless
+	void cancelSearch()  {
 		synchronized (this) {
-			if (state == DEVICE_SEARCH) {
-				discoveryAgent.cancelInquiry(this);
-			} else if (state == SERVICE_SEARCH) {
-				for (int i = 0; i < searchIDs.length; i++) {
-					discoveryAgent.cancelServiceSearch(searchIDs[i]);
-				}
+//			if (state == DEVICE_SEARCH) {
+//				discoveryAgent.cancelInquiry(this);
+//			} else if (state == SERVICE_SEARCH) {
+//				for (int i = 0; i < searchIDs.length; i++) {
+//					discoveryAgent.cancelServiceSearch(searchIDs[i]);
+//				}
+//			}
+			searchCanceled = true;
+			if(state == WAITING_FOR_SEARCH){
+				notify();
 			}
 		}
 	}
@@ -595,85 +626,87 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	void requestSearch() {
 		System.out.println("notify search");
 		synchronized (this) {
-			notify();
-		}
-	}
-
-	/**
-	 * Invoked by system when a new remote device is found - remember the found
-	 * device.
-	 */
-	public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
-		// same device may found several times during single search
-		if (devices.indexOf(btDevice) == -1) {
-			devices.addElement(btDevice);
-		}
-	}
-
-	/**
-	 * Invoked by system when device discovery is done.
-	 * <p>
-	 * Remember the discType and process its evaluation in another thread.
-	 */
-	public void inquiryCompleted(int discType) {
-		System.out.println("inquiry complete");
-		this.discType = discType;
-
-		synchronized (this) {
-			notify();
-		}
-	}
-
-	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
-		for (int i = 0; i < servRecord.length; i++) {
-			records.addElement(servRecord[i]);
-			System.out.println("1 service discovered");
-		}
-	}
-
-	public void serviceSearchCompleted(int transID, int respCode) {
-		try {
-			System.out.println("service search complete");
-			// first, find the service search transaction index
-			int index = -1;
-
-			for (int i = 0; i < searchIDs.length; i++) {
-				if (searchIDs[i] == transID) {
-					index = i;
-
-					break;
-				}
-			}
-
-			// error - unexpected transaction index
-			if (index == -1) {
-				System.err.println("Unexpected transaction index: " + transID);
-				// process the error case here
-			} else {
-				searchIDs[index] = -1;
-			}
-
-			/*
-			 * Actually, we do not care about the response code - if device is
-			 * not reachable or no records, etc.
-			 */
-
-			// make sure it was the last transaction
-			for (int i = 0; i < searchIDs.length; i++) {
-				if (searchIDs[i] != -1) {
-					return;
-				}
-			}
-
-			// ok, all of the transactions are completed
-			synchronized (this) {
+			if(state == READY){
 				notify();
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
+
+//	/**
+//	 * Invoked by system when a new remote device is found - remember the found
+//	 * device.
+//	 */
+//	public void deviceDiscovered(RemoteDevice btDevice, DeviceClass cod) {
+//		// same device may found several times during single search
+//		if (devices.indexOf(btDevice) == -1) {
+//			devices.addElement(btDevice);
+//		}
+//	}
+
+//	/**
+//	 * Invoked by system when device discovery is done.
+//	 * <p>
+//	 * Remember the discType and process its evaluation in another thread.
+//	 */
+//	public void inquiryCompleted(int discType) {
+//		System.out.println("inquiry complete");
+//		this.discType = discType;
+//
+//		synchronized (this) {
+//			notify();
+//		}
+//	}
+
+//	public void servicesDiscovered(int transID, ServiceRecord[] servRecord) {
+//		for (int i = 0; i < servRecord.length; i++) {
+//			records.addElement(servRecord[i]);
+//			System.out.println("1 service discovered");
+//		}
+//	}
+
+//	public void serviceSearchCompleted(int transID, int respCode) {
+//		try {
+//			System.out.println("service search complete");
+//			// first, find the service search transaction index
+//			int index = -1;
+//
+//			for (int i = 0; i < searchIDs.length; i++) {
+//				if (searchIDs[i] == transID) {
+//					index = i;
+//
+//					break;
+//				}
+//			}
+//
+//			// error - unexpected transaction index
+//			if (index == -1) {
+//				System.err.println("Unexpected transaction index: " + transID);
+//				// process the error case here
+//			} else {
+//				searchIDs[index] = -1;
+//			}
+//
+//			/*
+//			 * Actually, we do not care about the response code - if device is
+//			 * not reachable or no records, etc.
+//			 */
+//
+//			// make sure it was the last transaction
+//			for (int i = 0; i < searchIDs.length; i++) {
+//				if (searchIDs[i] != -1) {
+//					return;
+//				}
+//			}
+//
+//			// ok, all of the transactions are completed
+//			synchronized (this) {
+//				notify();
+//			}
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	void requestLoad(String name) {
 		synchronized (this) {
@@ -691,6 +724,16 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 			smsToSend = sms;
 			command = 2; // send direct sms
 			notify();
+		}
+	}
+
+	// notify bt_client that search for devices/services is complete
+	void searchComplete(boolean b) {
+		searchSuccessful = b;
+		synchronized (this) {
+			if (state == WAITING_FOR_SEARCH) {
+				notify();
+			}
 		}
 	}
 }

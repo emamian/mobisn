@@ -1,5 +1,6 @@
 package edu.ndsu.cs.mobisn;
 
+import java.util.Enumeration;
 import java.util.Vector;
 
 import javax.bluetooth.BluetoothStateException;
@@ -16,22 +17,23 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	private static final UUID PICTURES_SERVER_UUID = new UUID(
 			"F0E0D0C0B0A000908070605040302010", false);
 
-	/** The attribute id of the record item with images names. */
-	private static final int IMAGES_NAMES_ATTRIBUTE_ID = 0x4321;
-
-	// /** Shows the engine is ready to work. */
-	// private static final int READY = 0;
-	//
-	// /** Shows the engine is searching bluetooth devices. */
-	// private static final int DEVICE_SEARCH = 1;
-	//
-	// /** Shows the engine is searching bluetooth services. */
-	// private static final int SERVICE_SEARCH = 2;
+	/** The attribute id of the record item with profile info. */
+	public static final int MOBISN_PROFILE_ATTRIBUTE_ID = 0x4321;
+	/** The attribute id of the record item with routing table info. */
+	public static final int MOBISN_RT_ATTRIBUTE_ID = 0x4231;
 
 	/** update interval for agent */
 	private static final int interval = 5000;
+
 	/** Keeps the current state of engine. */
-	// private int state = READY;
+	private int state = READY;
+	/** Shows the engine is ready to work. */
+	private static final int READY = 0;
+	/** Shows the engine is searching bluetooth devices. */
+	private static final int DEVICE_SEARCH = 1;
+	/** Shows the engine is searching bluetooth services. */
+	private static final int SERVICE_SEARCH = 2;
+	private static final int SEARCH_DEVICE = 3;
 
 	/** Process the search/download requests. */
 	private Thread processorThread;
@@ -65,6 +67,10 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 
 	private boolean isBTReady;
 
+	private Vector waitingList;
+
+	// private int deviceInquiryRetryCount = 0;
+
 	public BTDiscoveryClient(MobisnMIDlet parent)
 			throws BluetoothStateException {
 		super();
@@ -76,6 +82,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 
 		// remember we've reached this point.
 		isBTReady = true;
+		waitingList = new Vector();
 
 		// we have to initialize a system in different thread...
 		processorThread = new Thread(this);
@@ -99,23 +106,26 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 		uuidSet[1] = PICTURES_SERVER_UUID;
 
 		// we need an only service attribute actually
-		attrSet = new int[1];
+		attrSet = new int[2];
 
 		// it's "images names" one
-		attrSet[0] = IMAGES_NAMES_ATTRIBUTE_ID;
+		attrSet[0] = MOBISN_PROFILE_ATTRIBUTE_ID;
+		attrSet[1] = MOBISN_RT_ATTRIBUTE_ID;
 
 		// start processing the images search/download
 		processSearch();
 	}
 
 	private synchronized void processSearch() {
+		int deviceInquiryRetryCount = 0;
 		while (!isClosed) {
 			// wait for new search request from user
-			// state = READY;
+			state = READY;
 
 			try {
 				System.out.println("heartbeat------------------");
-				wait(interval);
+				if (waitingList.isEmpty())
+					wait(interval);
 			} catch (InterruptedException e) {
 				System.err.println("Unexpected interruption: " + e);
 
@@ -129,15 +139,25 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 			}
 			// System.out.println("search devices");
 			// search for devices
+			state = SEARCH_DEVICE;
 			if (!searchDevices()) {
+				notifySearchComplete(false);
 				return;
 			} else if (devices.size() == 0) {
+				// if cannot get device 10 time in a row, there is a problem
+				if (++deviceInquiryRetryCount > 10){
+					parent
+							.informDiscoverySearchError("Can't start device search");
+					notifySearchComplete(false);
+				}
 				continue;
 			}
+			deviceInquiryRetryCount = 0;
 
 			// System.out.println("search services");
 			// search for services now
 			if (!searchServices()) {
+				notifySearchComplete(false);
 				return;
 			} else if (records.size() == 0) {
 				// System.out.println("heart beat ! (no device)");
@@ -146,7 +166,8 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 
 			// ok, something was found - add results to base hashtable
 			parent.updateBase(records);
-			System.out.println("-------------------heart beat ! (some device)");
+			notifySearchComplete(true);
+			System.out.println("-------------------heart beat ! (some devices found)");
 		}
 
 	}
@@ -233,15 +254,15 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	 */
 	private boolean searchDevices() {
 		// ok, start a new search then
-		// state = DEVICE_SEARCH;
+		state = DEVICE_SEARCH;
 		devices.removeAllElements();
 
 		try {
 			discoveryAgent.startInquiry(DiscoveryAgent.GIAC, this);
 		} catch (BluetoothStateException e) {
-			System.err.println("Can't start inquiry now: " + e);
-			parent.informDiscoverySearchError("Can't start device search");
-
+			// device is in use or can not get the device, try again later
+			// (true)
+			System.err.println("Can't start inquiry now: " + e.getMessage());
 			return true;
 		}
 
@@ -262,6 +283,8 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 		switch (discType) {
 		case INQUIRY_ERROR:
 			parent.informDiscoverySearchError("Device discovering error...");
+			notifySearchComplete(false);
+			
 
 			// fall through
 		case INQUIRY_TERMINATED:
@@ -274,6 +297,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 		case INQUIRY_COMPLETED:
 
 			if (devices.size() == 0) {
+				notifySearchComplete(false);
 				parent.informDiscoverySearchError("No devices in range");
 			}
 
@@ -292,13 +316,22 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 		return true;
 	}
 
+	private void notifySearchComplete(boolean isSuccessful) {
+		Enumeration en = waitingList.elements();
+		while (en.hasMoreElements()) {
+			BTMobiClient c = (BTMobiClient) en.nextElement();
+			c.searchComplete(isSuccessful);
+		}
+		waitingList.removeAllElements();
+	}
+
 	/**
 	 * Search for proper service.
 	 * 
 	 * @return false if should end the component work.
 	 */
 	private boolean searchServices() {
-		// state = SERVICE_SEARCH;
+		state = SERVICE_SEARCH;
 		records.removeAllElements();
 		searchIDs = new int[devices.size()];
 
@@ -324,7 +357,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 		// at least one of the services search should be found
 		if (!isSearchStarted) {
 			parent.informDiscoverySearchError("Can't search services.");
-
+			notifySearchComplete(false);
 			return true;
 		}
 
@@ -363,5 +396,14 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 			processorThread.join();
 		} catch (InterruptedException e) {
 		} // ignore
+	}
+
+	public void waitForSearchComplete(BTMobiClient r) {
+		waitingList.addElement(r);
+		synchronized (this) {
+			if (state == READY) {
+				notify();
+			}
+		}
 	}
 }

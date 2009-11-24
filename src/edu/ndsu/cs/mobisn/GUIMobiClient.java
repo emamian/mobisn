@@ -63,12 +63,12 @@ public class GUIMobiClient implements CommandListener {
 
 	private Vector listScreenKeys = new Vector();
 
-	GUIMobiClient(MobisnMIDlet parent) throws BluetoothStateException {
+	GUIMobiClient(MobisnMIDlet parent, BTDiscoveryClient discoveryClient) throws BluetoothStateException {
 		this.parent = parent;
 		mainScreen.addCommand(SCR_MAIN_BACK_CMD);
 		mainScreen.addCommand(SCR_MAIN_SEARCH_CMD);
 		mainScreen.setCommandListener(this);
-		bt_client = new BTMobiClient(this);
+		bt_client = new BTMobiClient(this,discoveryClient);
 		listScreen.addCommand(SCR_PROFILES_BACK_CMD);
 		listScreen.addCommand(SCR_PROFILES_LOAD_CMD);
 		listScreen.addCommand(SCR_PROFILES_SMS_CMD);
@@ -209,8 +209,7 @@ public class GUIMobiClient implements CommandListener {
 	}
 
 	public void destroy() {
-		// TODO Auto-generated method stub
-
+		bt_client.destroy();
 	}
 
 	/**
