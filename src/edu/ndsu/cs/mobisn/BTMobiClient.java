@@ -139,7 +139,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 	 */
 	private synchronized void processImagesSearchDownload() {
 		try {
-			System.out.println("process search download");
+//			System.out.println("process search download");
 			while (!isClosed) {
 				// wait for new search request from user
 				state = READY;
@@ -188,7 +188,7 @@ public class BTMobiClient implements Runnable, DiscoveryListener {
 					try {
 						wait();
 					} catch (InterruptedException e) {
-						System.err.println("Unexpected interruption: " + e);
+						System.err.println("Unexpected interruption - bt_client waiting for profile selection: " + e);
 
 						return;
 					}
