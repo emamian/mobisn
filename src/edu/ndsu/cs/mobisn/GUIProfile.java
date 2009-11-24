@@ -11,6 +11,7 @@ import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
+import javax.microedition.rms.RecordStoreException;
 
 public class GUIProfile implements CommandListener, ItemCommandListener {
 	MobisnMIDlet parent;
