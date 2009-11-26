@@ -55,7 +55,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 	}
 
 	private void saveProfileToDisk() {
-		Profile.SaveRecord(profileRecord, this.profile.getID());
+		Profile.SaveRecord(profileRecord, this.profile.getID()+":"+this.profile.getImagePath());
 		System.out.println("Saved Profile Record");
 	}
 
