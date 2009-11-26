@@ -65,11 +65,13 @@ public class Profile {
 		this.image = Image.createImage(imagePath);
 	}
 
-	public Profile(String name, String family, String age) {
+	public Profile(String name, String family, String age, String imagePath) throws IOException {
 		super();
 		this.name = name;
 		this.family = family;
 		this.age = age;
+		this.imagePath = imagePath;
+		this.image = Image.createImage(imagePath);
 	}
 
 	public void saveStringInterests()
@@ -285,6 +287,9 @@ public class Profile {
 
 	public void setImage(Image image) {
 		this.image = image;
+	}
+	public void setImagePath(String imagePath) {
+		this.imagePath = imagePath;
 	}
 
 	public void setName(String name) {
