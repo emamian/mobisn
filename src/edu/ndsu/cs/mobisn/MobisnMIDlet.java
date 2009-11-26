@@ -65,7 +65,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	private boolean inMainMenu = false;
 	private String profileRecord = "profileData";	
-	private String[] profileArray = {"","",""};
+	private String[] profileArray = {"","","",""};
 
 	// private static final Logger logger = Logger.getLogger("BTMobiClient");
 	/**
@@ -184,7 +184,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				profile = new Profile(); //random profile.
 			}
 			else {
-				profile = new Profile(profileArray[0],profileArray[1],profileArray[2]);
+				profile = new Profile(profileArray[0],profileArray[1],profileArray[2],profileArray[3]);
 			}
 			try {
 				mobiServer = new GUIMobiServer(this);
@@ -247,7 +247,11 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			//System.out.println("PrevPos is" + prevPos);
 			pos = profiledata.indexOf(del, prevPos);	//move to the next delimiter between Family and age.
 			profileArray[1] = profiledata.substring(prevPos, pos);  // Get family data
-			profileArray[2] = profiledata.substring(pos+1);
+			prevPos = pos+1;
+			pos = profiledata.indexOf(del, prevPos);	//move to the next delimiter between age and imagepath.
+			profileArray[2] = profiledata.substring(prevPos, pos);  // Get family data
+			//end loop?
+			profileArray[3] = profiledata.substring(pos+1); //load final segment of data (imagepath)
 			return true;
 		}
 		else
