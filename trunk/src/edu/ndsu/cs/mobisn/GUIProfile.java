@@ -24,6 +24,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 	private Vector items = new Vector();
 	int currentEdit = -1;
 	TextBox textbox;
+	private String profileRecord = "profileData";
 
 	public GUIProfile(MobisnMIDlet parent) {
 		super();
@@ -39,6 +40,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 		if (c == EDIT_DONE_CMD) {
 			if(setProfileProp(textbox.getString())){
 				parent.rePublishProfile();
+				this.saveProfileToDisk();
 				System.out.println("set profile done");
 			}
 			else
@@ -50,6 +52,11 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 			show();
 			return;
 		}
+	}
+
+	private void saveProfileToDisk() {
+		Profile.SaveRecord(profileRecord, this.profile.getID());
+		System.out.println("Saved Profile Record");
 	}
 
 	public void show() {
