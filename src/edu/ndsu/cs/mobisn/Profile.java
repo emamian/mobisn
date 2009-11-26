@@ -12,6 +12,8 @@ import javax.microedition.lcdui.ImageItem;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.rms.RecordStore;
+import javax.microedition.rms.RecordStoreException;
+import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 
@@ -124,6 +126,7 @@ public class Profile {
 			System.out.println("Profile record loaded from disk:" + recordName + name);
 			rs.closeRecordStore();
 			System.out.println("Closed recordStore");
+			rs = null;
 		}
 		catch(RecordStoreNotFoundException rse){
 			//swallow it.
@@ -140,6 +143,55 @@ public class Profile {
 		}		
 		
 		return record;
+	}
+
+	public static String LoadRecord(String recordName){ //throws RecordStoreNotFoundException, RecordStoreException{
+		String ret = "";
+		RecordStore rs = null;
+		try {
+			rs = RecordStore.openRecordStore(recordName, false);
+			byte[] bb = rs.getRecord(1);
+			ret = new String(bb,0,bb.length);
+			rs.closeRecordStore();
+			rs = null;
+		}
+		catch(RecordStoreNotFoundException rse){
+			rse.printStackTrace();
+		}
+		catch(RecordStoreException e){
+			e.printStackTrace();
+		}
+		return ret;
+	}
+	public static void SaveRecord(String recordName, String recordData){
+		int lRecordID = 0;
+		try{
+			RecordStore.deleteRecordStore(recordName);
+			System.out.println("DeletedRecordStore" + recordName);
+		}
+		catch(RecordStoreNotFoundException rse){
+			//swallow it.
+			System.out.println("RS not found yet.");
+			//e.printStackTrace();
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+		
+		try
+		{
+			RecordStore rs = RecordStore.openRecordStore(recordName, true);
+			lRecordID = rs.addRecord(recordData.getBytes(), 0, recordData.getBytes().length); // Add Record
+			
+			rs.closeRecordStore();
+			System.out.println("Save Succeeded for Record"+recordName);
+
+		}
+		catch (Exception e)
+		{
+			System.out.println("Error in saving record" + e.getMessage());
+		}
+		
 	}
 	
 	public String getAge() {
@@ -169,6 +221,9 @@ public class Profile {
 
 	public String getInterestsVectorString() {
 		return interests.getInterestsString();
+	}
+	public Vector getInterestsVectorFromString(String s){
+		return interests.getVectorFromString(s);
 	}
 
 	public String getName() {
