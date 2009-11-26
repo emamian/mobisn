@@ -64,6 +64,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private BTDiscoveryClient discoveryClient = null;
 
 	private boolean inMainMenu = false;
+	private String profileRecord = "profileData";	
+	private String[] profileArray = {"","",""};
 
 	// private static final Logger logger = Logger.getLogger("BTMobiClient");
 	/**
@@ -176,7 +178,14 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			loadingForm.addCommand(EXIT_CMD);
 			loadingForm.setCommandListener(this);
 			loadingForm.append("Loading...");
-			profile = new Profile();
+			
+			//If can't load from disk, load random person...
+			if(!this.loadProfileDataFromDisk()){
+				profile = new Profile(); //random profile.
+			}
+			else {
+				profile = new Profile(profileArray[0],profileArray[1],profileArray[2]);
+			}
 			try {
 				mobiServer = new GUIMobiServer(this);
 			} catch (Exception e) {
@@ -224,7 +233,26 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		}
 
 	}
-
+	private boolean loadProfileDataFromDisk(){
+		String profiledata = Profile.LoadRecord(profileRecord);
+		System.out.println("Loaded profile data" + profiledata);
+		String del = ":";
+		int prevPos = 0;
+		int pos = profiledata.indexOf(del);	//find delimiter between name and family.   
+		//System.out.println("pos" + pos);
+		if(profiledata != ""){	
+			//if we have data, load the array...
+			profileArray[0] = profiledata.substring(prevPos, pos);
+			prevPos = pos+1; //set previous position increment past delimiter 
+			//System.out.println("PrevPos is" + prevPos);
+			pos = profiledata.indexOf(del, prevPos);	//move to the next delimiter between Family and age.
+			profileArray[1] = profiledata.substring(prevPos, pos);  // Get family data
+			profileArray[2] = profiledata.substring(pos+1);
+			return true;
+		}
+		else
+			return false;
+	}
 	private void showLoadErr(String resMsg) {
 		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
 		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
