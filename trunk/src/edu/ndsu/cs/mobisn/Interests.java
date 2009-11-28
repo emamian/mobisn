@@ -3,32 +3,61 @@ package edu.ndsu.cs.mobisn;
 import java.util.Vector;
 
 public class Interests {
-	private  NodeData root ;
+	private NodeData root;
 
 	Interests() {
 
-			root = new NodeData("Interests");
-			NodeData ch;
-			ch = new NodeData("music");
-			ch.addChild(new NodeData("jazz"));
-			ch.addChild(new NodeData("pop"));
-			ch.addChild(new NodeData("rock"));
-			ch.addChild(new NodeData("metal"));
-			root.addChild(ch);
+		root = new NodeData("Interests");
+		NodeData ch;
+		ch = new NodeData("music");
+		ch.addChild(new NodeData("jazz"));
+		ch.addChild(new NodeData("pop"));
+		ch.addChild(new NodeData("rock"));
+		ch.addChild(new NodeData("metal"));
+		root.addChild(ch);
 
-			ch = new NodeData("sports");
-			ch.addChild(new NodeData("basketball"));
-			ch.addChild(new NodeData("football"));
-			ch.addChild(new NodeData("swimming"));
-			ch.setInterested(true);
-			root.addChild(ch);
+		ch = new NodeData("sports");
+		ch.addChild(new NodeData("basketball"));
+		ch.addChild(new NodeData("football"));
+		ch.addChild(new NodeData("swimming"));
+		ch.setInterested(true); // it is jst random
+		root.addChild(ch);
 
-			ch = new NodeData("art");
-			ch.addChild(new NodeData("drawing"));
-			ch.addChild(new NodeData("theatre"));
-			root.addChild(ch);
+		ch = new NodeData("art");
+		ch.addChild(new NodeData("drawing"));
+		ch.addChild(new NodeData("theatre"));
+		root.addChild(ch);
 
-			setAllDepths();
+		setAllDepths();
+	}
+
+	//for loading from file
+	public boolean loadFromString(String s) {
+		Vector v = new Vector();
+		v.addElement(root);
+		int index = 0;
+		int len = s.length();
+		while (!v.isEmpty()) {
+			if (index >= len)
+				return false;
+			NodeData g = (NodeData) v.firstElement();
+			v.removeElementAt(0);
+			if (s.charAt(index) == '1') {
+				g.setInterested(true);
+			} else if (s.charAt(index) == '0') {
+				g.setInterested(false);
+			} else {
+				System.err.println("unknown character in interest string");
+				return false;
+			}
+
+			index++;
+
+			for (int i = 0; i < g.getChilds().size(); i++) {
+				v.addElement(g.getChilds().elementAt(i));
+			}
+		}
+		return true;
 	}
 
 	public String getInterestsString() {
@@ -94,7 +123,7 @@ public class Interests {
 	// }
 	// return v;
 	// }
-	
+
 	public Vector getVectorFromString(String s) {
 		int index = 0;
 		Vector v = new Vector();
@@ -116,7 +145,7 @@ public class Interests {
 				v.addElement(g.getChilds().elementAt(i));
 			}
 		}
-//		System.out.println(ret.toString());
+		// System.out.println(ret.toString());
 		return ret;
 	}
 

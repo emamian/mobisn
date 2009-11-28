@@ -446,7 +446,7 @@ public class MobisnMIDlet extends MIDlet {
 			return ret;
 		case DataElement.STRING:
 			String r = (String)de.getValue();
-			System.out.println("type string returning "+r);
+//			System.out.println("type string returning "+r);
 			return r;
 		default:
 			return "unknowm DataElement type: " + de.toString();
