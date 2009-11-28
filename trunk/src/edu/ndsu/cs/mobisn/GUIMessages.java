@@ -40,7 +40,6 @@ public class GUIMessages implements CommandListener{
 		messageForm.addCommand(MSG_BACK_CMD);
 		messageForm.addCommand(MSG_REPLY_CMD);
 		messageForm.setCommandListener(this);
-		
 	}
 
 	public void commandAction(Command c, Displayable d) {

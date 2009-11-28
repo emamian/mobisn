@@ -12,39 +12,20 @@ import javax.bluetooth.RemoteDevice;
 import javax.bluetooth.ServiceRecord;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
-import javax.microedition.lcdui.Command;
-import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.Image;
-import javax.microedition.lcdui.List;
 import javax.microedition.midlet.MIDlet;
 
-public class MobisnMIDlet extends MIDlet implements CommandListener {
+public class MobisnMIDlet extends MIDlet {
 
 	private RoutingTable routingTable = new RoutingTable();
 	/** The messages are shown in this demo this amount of time. */
 	static final int ALERT_TIMEOUT = 2000;
 
-	/** Soft button for exiting the demo. */
-	private final Command EXIT_CMD = new Command("Exit", Command.EXIT, 2);
 
-	/** Soft button for launching a client or sever. */
-	private final Command OK_CMD = new Command("Ok", Command.SCREEN, 1);
-
-	/** A list of menu items */
-	private static final String[] elements = { "System Management",
-			"Group Management", "Profile Management", "Interests", "messages" };
-
-	private static final String[] elementsImgs = { "System Management.jpg",
-			"Group Management.jpg", "Profile Management.jpg", "", "" };
-
+	
 	/** A menu list instance */
-	private final List menu = new List("MobiSN Demo", List.IMPLICIT, elements,
-			null);
-
+	
 	/** A GUI part of client that receives image from client */
 	private GUIMobiClient mobiClient = null;
 
@@ -56,8 +37,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private GUIInterests interestsScreen;
 	private GUIMessages inboxScreen;
 
-	private Form loadingForm = new Form("Loading MobiSN");
-
 	private Hashtable base = new Hashtable();
 	private Hashtable messages = new Hashtable();
 
@@ -66,6 +45,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private boolean inMainMenu = false;
 	private String profileRecord = "profileData";	
 	private String[] profileArray = {"","","",""};
+	private MainMenu mainMenu;
 
 	// private static final Logger logger = Logger.getLogger("BTMobiClient");
 	/**
@@ -76,48 +56,6 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		// logger.info("salam");
 	}
 
-	/**
-	 * Responds to commands issued on "client or server" form.
-	 * 
-	 * @param c
-	 *            command object source of action
-	 * @param d
-	 *            screen object containing the item action was performed on
-	 */
-	public void commandAction(Command c, Displayable d) {
-		if (c == EXIT_CMD) {
-			destroyApp(true);
-			notifyDestroyed();
-
-			return;
-		}
-
-		switch (menu.getSelectedIndex()) {
-		case 0:
-			mobiServer.show();
-			break;
-
-		case 1:
-			mobiClient.show();
-			break;
-		case 2:
-			myProfileScreen.show();
-			break;
-
-		case 3:
-			interestsScreen.show();
-			break;
-
-		case 4:
-			inboxScreen.show();
-			break;
-
-		default:
-			System.err.println("Unexpected choice...");
-			break;
-		}
-
-	}
 
 	/**
 	 * Destroys the application.
@@ -138,9 +76,9 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	 * Returns the displayable object of this screen - it is required for Alert
 	 * construction for the error cases.
 	 */
-	Displayable getDisplayable() {
-		return menu;
-	}
+//	Displayable getDisplayable() {
+//		return this.getDisplayable();
+//	}
 
 	public Profile getProfile() {
 		return profile;
@@ -154,8 +92,7 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 
 	/** Shows main menu of MIDlet on the screen. */
 	void show() {
-		menu.set(4, "messages (" + messages.size() + ")", null);
-		Display.getDisplay(this).setCurrent(menu);
+		mainMenu.show(messages.size());
 		inMainMenu = true;
 	}
 
@@ -175,10 +112,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 	private void init() {
 		try {
 
-			loadingForm.addCommand(EXIT_CMD);
-			loadingForm.setCommandListener(this);
-			loadingForm.append("Loading...");
-			
+			mainMenu = new MainMenu(this);
+			System.out.println("menu built");
 			//If can't load from disk, load random person...
 			if(!this.loadProfileDataFromDisk()){
 				profile = new Profile(); //random profile.
@@ -189,9 +124,8 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			try {
 				mobiServer = new GUIMobiServer(this);
 			} catch (Exception e) {
-				System.err.println("Can't initialize bluetooth server: " + e);
-				e.printStackTrace();
 				showLoadErr("Can't initialize bluetooth server");
+				e.printStackTrace();
 				return;
 			}
 			discoveryClient = new BTDiscoveryClient(this);
@@ -204,28 +138,21 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				return;
 			}
 			// start discovery agent
-
-			menu.addCommand(EXIT_CMD);
-			menu.addCommand(OK_CMD);
-			menu.setCommandListener(this);
-			menu.setTitle(profile.getFullName());
-
-			String menuImagesPrefix = "/menu/";
-			for (int i = 0; i < menu.size(); i++) {
-				if (elementsImgs[i] != "") {
-					menu.set(i, elements[i], Image.createImage(menuImagesPrefix
-							+ elementsImgs[i]));
-				}
-			}
-
 			myProfileScreen = new GUIProfile(this);
 			interestsScreen = new GUIInterests(this);
 			inboxScreen = new GUIMessages(this);
-
-			menu.setSelectedIndex(1, true);
+			
+			try {
+				mainMenu.finishInit();
+			} catch (Exception e) {
+				showLoadErr("Can't initialize menu");
+				e.printStackTrace();
+				return;
+			}
+			
 
 		} catch (BluetoothStateException e) {
-			System.err.println("could not discovery agent.");
+			System.err.println("could not init discovery agent.");
 			e.printStackTrace();
 		} catch (Exception e) {
 			System.err.println("could not initialize DemoMidlet.");
@@ -258,14 +185,14 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 			return false;
 	}
 	private void showLoadErr(String resMsg) {
-		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
-		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-		loadingForm.append(resMsg);
-		Display.getDisplay(this).setCurrent(al, loadingForm);
+		mainMenu.showLoadErr(resMsg);
+//		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
+//		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
+//		loadingForm.append(resMsg);
+//		Display.getDisplay(this).setCurrent(al, loadingForm);
 	}
 
 	public void receivedNewSMS(String sms, StreamConnection conn) {
-		// TODO Auto-generated method stub
 		System.out.println("received sms :" + sms);
 		Date d = new Date();
 		MessageWrapper mw = new MessageWrapper(sms, conn, d.toString());
@@ -360,21 +287,21 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				// get the attribute with images names
 				DataElement de = sr
 						.getAttributeValue(BTMobiClient.MOBISN_PROFILE_ATTRIBUTE_ID);
-				DataElement deRoutingTable = sr
+				DataElement de2 = sr
 						.getAttributeValue(BTMobiClient.MOBISN_RT_ATTRIBUTE_ID);
 
 				System.out.println("input Routing Table: ------");
 				if (de == null) {
 					System.out.println("no elemtn in routing table");
 				} else
-					getDataElementString(de);
+					System.out.println(getDataElementString(de));
 				System.out.println("input Routing Table: ------end");
 
-				if (deRoutingTable == null) {
+				if (de2 == null) {
 					System.err
 							.println("Unexpected serviceRecord - missed attribute routing table");
 				} else {
-					routingTable.loadFromDataElement(deRoutingTable);
+					routingTable.loadFromDataElement(de2);
 				}
 				if (de == null) {
 					System.err.println("Unexpected service - missed attribute");
@@ -495,13 +422,18 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 		if (de == null) {
 			System.out.println("no elemtn in routing table");
 		} else
-			getDataElementString(de);
+			System.out.println(getDataElementString(de));
 		System.out.println("Routing Table: ------end");
 		return de;
 	}
 
 	public String getDataElementString(DataElement de) {
-		switch (de.getDataType()) {
+//		System.out.println("data element:dataseq "+DataElement.DATSEQ);
+//		System.out.println("data element:datalt "+DataElement.DATALT);
+//		System.out.println("data element:str "+DataElement.STRING);
+//		System.out.println("this data element:"+de.getDataType());
+		int type = de.getDataType();
+		switch (type) {
 		case DataElement.DATSEQ:
 			String ret = "{dataSeq:";
 			Enumeration en = (Enumeration) de.getValue();
@@ -510,11 +442,43 @@ public class MobisnMIDlet extends MIDlet implements CommandListener {
 				ret += getDataElementString(d) + ",";
 			}
 			ret += "}";
+//			System.out.println("type dataseq returning "+ret);
 			return ret;
 		case DataElement.STRING:
-			return (String) de.getValue();
+			String r = (String)de.getValue();
+			System.out.println("type string returning "+r);
+			return r;
 		default:
 			return "unknowm DataElement type: " + de.toString();
 		}
+	}
+
+
+	public void menuCommand(int selectedIndex) {
+		switch (selectedIndex) {
+		case 0:
+			mobiServer.show();
+			break;
+
+		case 1:
+			mobiClient.show();
+			break;
+		case 2:
+			myProfileScreen.show();
+			break;
+
+		case 3:
+			interestsScreen.show();
+			break;
+
+		case 4:
+			inboxScreen.show();
+			break;
+
+		default:
+			System.err.println("Unexpected choice...");
+			break;
+		}
+		
 	}
 }
