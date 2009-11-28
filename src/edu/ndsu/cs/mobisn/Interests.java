@@ -94,6 +94,7 @@ public class Interests {
 	// }
 	// return v;
 	// }
+	
 	public Vector getVectorFromString(String s) {
 		int index = 0;
 		Vector v = new Vector();

@@ -366,11 +366,9 @@ public class BTMobiServer implements Runnable {
 	}
 
 	public boolean publishProfile(boolean canPublish) {
-		//TODO add routing table to service record
 		DataElement de;
 		DataElement de2;
 		if (canPublish) {
-			// put profiles summery in serviceRecord
 			de = myProfile.getServiceRecordElement();
 			de2 = parent.getMyRT();
 		} else {
