@@ -158,7 +158,8 @@ public class Profile {
 			rs = null;
 		}
 		catch(RecordStoreNotFoundException rse){
-			rse.printStackTrace();
+			System.err.println("recode : "+recordName+" not found");
+//			rse.printStackTrace();
 		}
 		catch(RecordStoreException e){
 			e.printStackTrace();
