@@ -1,4 +1,4 @@
-#summary some notes on MobiSN architecture
+#summary Some notes on MobiSN architecture
 #labels Featured,Phase-Design
 
 = Architecture =
