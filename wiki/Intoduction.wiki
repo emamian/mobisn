@@ -1,4 +1,5 @@
-#summary One-sentence summary of this page.
+#summary Introduction to MobiSN
+#labels Featured
 
 = Introduction =
 MobiSN is a software package for cellular phones to form mobile ad hoc social networks. Mobile social networks are self-configuring social networks that connect users using mobile devices, such as laptops, PDAs, and cellular phones. The construction of such social networks over mobile devices in the events or at locations, such as conferences, expositions, galleries, stadiums, and restaurants enable people to communicate and share their experiences without the need to have Internet access and with minimum required infrastructure. These networks shift from the existing social networking archetype towards a mobile ad hoc network (MANET) that potentially connects all types of devices that are equipped with short-range communication medium, such as Bluetooth and Wi-Fi.
