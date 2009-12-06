@@ -47,7 +47,7 @@ public class Profile {
 			this.name = "Ryan";
 			this.family = "Carlson" + r.nextInt(1000);
 			this.age = "21";
-			this.imagePath = "/profiles/na.jpg";
+			this.imagePath = "/profiles/Ryan.jpg";
 			break;
 		case 3:
 			this.name = "Chao";
