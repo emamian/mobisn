@@ -67,6 +67,7 @@ public class GUIProfile implements CommandListener, ItemCommandListener {
 		}
 		profileScreen.deleteAll();
 		loadProfileData();
+		saveProfileToDisk(); //For a new person, save the record so we have it on disk right away.
 		for (int i = 0; i < items.size(); i++) {
 			Item item = (Item) items.elementAt(i);
 			profileScreen.append(item);
