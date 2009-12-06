@@ -27,7 +27,7 @@ public class GUIInterests implements CommandListener {
 		this.parent = parent;
 		if (parent.getProfile() == null)
 			throw new Exception("profile for GUIInterest is null");
-		this.interest = parent.getProfile().getRootInterest();
+		this.interest = parent.getProfile().getRootInterest();		
 	}
 
 	public void commandAction(Command c, Displayable d) {
@@ -37,8 +37,7 @@ public class GUIInterests implements CommandListener {
 			if (f == null) {
 				//save record.
 				parent.getProfile().saveStringInterests();
-				//TODO save node int...
-				//parent.getProfile().saveNodeInterests();
+				
 				System.out.println("PRofile saved");
 				parent.show();
 				return;
