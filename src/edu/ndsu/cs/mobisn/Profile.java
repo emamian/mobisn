@@ -13,7 +13,6 @@ import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
-import javax.microedition.rms.RecordStoreFullException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 
@@ -23,7 +22,7 @@ public class Profile {
 	private String family;
 	private Image image = null;
 	private String imagePath = "";
-	private Interests interests = new Interests();
+	private Interests interests = new Interests();	
 	private String name;
 	private String recordName = "InterestsData";
 	private int RecordID = 0;
@@ -62,7 +61,7 @@ public class Profile {
 			this.age = "29";
 			this.imagePath = "/profiles/na.jpg";
 		}
-		this.image = Image.createImage(imagePath);
+		this.image = Image.createImage(imagePath);		
 	}
 
 	public Profile(String name, String family, String age, String imagePath) throws IOException {
@@ -72,6 +71,7 @@ public class Profile {
 		this.age = age;
 		this.imagePath = imagePath;
 		this.image = Image.createImage(imagePath);
+		this.interests.loadFromString(this.loadStringInterests());
 	}
 
 	public void saveStringInterests()
@@ -79,10 +79,11 @@ public class Profile {
 		String record = interests.getInterestsString();
 		try{
 			//Question just delete the RecordID from last save?  Or make it simple and delete the whole recordStore...
-			if(RecordID == 0){
+			//TODO this isn't working now...
+			//if(RecordID == 0){
 				RecordStore.deleteRecordStore(recordName + name);
 				System.out.println("DeletedREcordStore");
-			}
+			//}
 //			else {
 //				RecordStore rs1 = RecordStore.openRecordStore(recordName + name, true);
 //				rs1.deleteRecord(RecordID);
@@ -115,7 +116,7 @@ public class Profile {
 	}
 	
 	public String loadStringInterests() {
-		String record = null;
+		String record = "1000000000000";
 		RecordStore rs = null;
 		try
 		{
@@ -127,7 +128,7 @@ public class Profile {
 			//record = new NodeData()
 			System.out.println("Profile record loaded from disk:" + recordName + name);
 			rs.closeRecordStore();
-			System.out.println("Closed recordStore");
+			System.out.println("Closed recordStore");			
 			rs = null;
 		}
 		catch(RecordStoreNotFoundException rse){
@@ -142,8 +143,9 @@ public class Profile {
 		catch(Exception e)
 		{
 			e.printStackTrace();
-		}		
-		
+			return record;
+		}
+				
 		return record;
 	}
 
@@ -187,7 +189,7 @@ public class Profile {
 			lRecordID = rs.addRecord(recordData.getBytes(), 0, recordData.getBytes().length); // Add Record
 			
 			rs.closeRecordStore();
-			System.out.println("Save Succeeded for Record"+recordName);
+			System.out.println("Save Succeeded for Record"+recordName + " RecID: " + lRecordID);
 
 		}
 		catch (Exception e)
@@ -243,6 +245,11 @@ public class Profile {
 		return interests.getRoot();
 	}
 
+	public void setRootInterests(NodeData root){
+		interests.setRoot(root);
+		return;
+	}
+	
 	public DataElement getServiceRecordElement() {
 		DataElement ret = new DataElement(DataElement.DATSEQ);
 
