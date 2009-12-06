@@ -180,4 +180,8 @@ public class Interests {
 		size = Math.sqrt(size);
 		return size;
 	}
+
+	public void setRoot(NodeData _root) {
+		this.root = _root;
+	}
 }
