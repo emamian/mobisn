@@ -22,10 +22,8 @@ public class MobisnMIDlet extends MIDlet {
 	/** The messages are shown in this demo this amount of time. */
 	static final int ALERT_TIMEOUT = 2000;
 
-
-	
 	/** A menu list instance */
-	
+
 	/** A GUI part of client that receives image from client */
 	private GUIMobiClient mobiClient = null;
 
@@ -43,8 +41,8 @@ public class MobisnMIDlet extends MIDlet {
 	private BTDiscoveryClient discoveryClient = null;
 
 	private boolean inMainMenu = false;
-	private String profileRecord = "profileData";	
-	private String[] profileArray = {"","","",""};
+	private String profileRecord = "profileData";
+	private String[] profileArray = { "", "", "", "" };
 	private MainMenu mainMenu;
 
 	// private static final Logger logger = Logger.getLogger("BTMobiClient");
@@ -56,29 +54,48 @@ public class MobisnMIDlet extends MIDlet {
 		// logger.info("salam");
 	}
 
-
 	/**
 	 * Destroys the application.
 	 */
 	protected void destroyApp(boolean unconditional) {
-		if (mobiServer != null) {
-			mobiServer.destroy();
+		try {
+
+			if (mobiServer != null) {
+				System.out.println("destroying mobiserver");
+				mobiServer.destroy();
+			}
+		} catch (Exception e) {
+			// ignore
 		}
 
-		if (mobiClient != null) {
-			mobiClient.destroy();
+		try {
+
+			if (mobiClient != null) {
+				System.out.println("destroying mobiclient");
+				mobiClient.destroy();
+			}
+		} catch (Exception e) {
+			// ignore
 		}
-		if (discoveryClient != null)
-			discoveryClient.destroy();
+		try {
+
+			if (discoveryClient != null) {
+				System.out.println("destroying discovery");
+				discoveryClient.destroy();
+			}
+		} catch (Exception e) {
+			// ignore
+		}
+		notifyDestroyed();
 	}
 
 	/**
 	 * Returns the displayable object of this screen - it is required for Alert
 	 * construction for the error cases.
 	 */
-//	Displayable getDisplayable() {
-//		return this.getDisplayable();
-//	}
+	// Displayable getDisplayable() {
+	// return this.getDisplayable();
+	// }
 
 	public Profile getProfile() {
 		return profile;
@@ -105,7 +122,7 @@ public class MobisnMIDlet extends MIDlet {
 			show();
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.err.println("could not start Midlet (startApp()");
+			System.err.println("could not start Midlet startApp()");
 		}
 	}
 
@@ -114,12 +131,12 @@ public class MobisnMIDlet extends MIDlet {
 
 			mainMenu = new MainMenu(this);
 			System.out.println("menu built");
-			//If can't load from disk, load random person...
-			if(!this.loadProfileDataFromDisk()){
-				profile = new Profile(); //random profile.
-			}
-			else {
-				profile = new Profile(profileArray[0],profileArray[1],profileArray[2],profileArray[3]);
+			// If can't load from disk, load random person...
+			if (!this.loadProfileDataFromDisk()) {
+				profile = new Profile(); // random profile.
+			} else {
+				profile = new Profile(profileArray[0], profileArray[1],
+						profileArray[2], profileArray[3]);
 			}
 			try {
 				mobiServer = new GUIMobiServer(this);
@@ -130,7 +147,7 @@ public class MobisnMIDlet extends MIDlet {
 			}
 			discoveryClient = new BTDiscoveryClient(this);
 			try {
-				mobiClient = new GUIMobiClient(this,discoveryClient);
+				mobiClient = new GUIMobiClient(this, discoveryClient);
 			} catch (Exception e) {
 				System.err.println("Can't initialize bluetooth client: " + e);
 				e.printStackTrace();
@@ -141,7 +158,7 @@ public class MobisnMIDlet extends MIDlet {
 			myProfileScreen = new GUIProfile(this);
 			interestsScreen = new GUIInterests(this);
 			inboxScreen = new GUIMessages(this);
-			
+
 			try {
 				mainMenu.finishInit();
 			} catch (Exception e) {
@@ -149,7 +166,6 @@ public class MobisnMIDlet extends MIDlet {
 				e.printStackTrace();
 				return;
 			}
-			
 
 		} catch (BluetoothStateException e) {
 			System.err.println("could not init discovery agent.");
@@ -160,36 +176,47 @@ public class MobisnMIDlet extends MIDlet {
 		}
 
 	}
-	private boolean loadProfileDataFromDisk(){
+
+	private boolean loadProfileDataFromDisk() {
 		String profiledata = Profile.LoadRecord(profileRecord);
 		System.out.println("Loaded profile data" + profiledata);
 		String del = ":";
 		int prevPos = 0;
-		int pos = profiledata.indexOf(del);	//find delimiter between name and family.   
-		//System.out.println("pos" + pos);
-		if(profiledata != ""){	
-			//if we have data, load the array...
+		int pos = profiledata.indexOf(del); // find delimiter between name and
+											// family.
+		// System.out.println("pos" + pos);
+		if (profiledata != "") {
+			// if we have data, load the array...
 			profileArray[0] = profiledata.substring(prevPos, pos);
-			prevPos = pos+1; //set previous position increment past delimiter 
-			//System.out.println("PrevPos is" + prevPos);
-			pos = profiledata.indexOf(del, prevPos);	//move to the next delimiter between Family and age.
-			profileArray[1] = profiledata.substring(prevPos, pos);  // Get family data
-			prevPos = pos+1;
-			pos = profiledata.indexOf(del, prevPos);	//move to the next delimiter between age and imagepath.
-			profileArray[2] = profiledata.substring(prevPos, pos);  // Get family data
-			//end loop?
-			profileArray[3] = profiledata.substring(pos+1); //load final segment of data (imagepath)
+			prevPos = pos + 1; // set previous position increment past delimiter
+			// System.out.println("PrevPos is" + prevPos);
+			pos = profiledata.indexOf(del, prevPos); // move to the next
+														// delimiter between
+														// Family and age.
+			profileArray[1] = profiledata.substring(prevPos, pos); // Get family
+																	// data
+			prevPos = pos + 1;
+			pos = profiledata.indexOf(del, prevPos); // move to the next
+														// delimiter between age
+														// and imagepath.
+			profileArray[2] = profiledata.substring(prevPos, pos); // Get family
+																	// data
+			// end loop?
+			profileArray[3] = profiledata.substring(pos + 1); // load final
+																// segment of
+																// data
+																// (imagepath)
 			return true;
-		}
-		else
+		} else
 			return false;
 	}
+
 	private void showLoadErr(String resMsg) {
 		mainMenu.showLoadErr(resMsg);
-//		Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
-//		al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
-//		loadingForm.append(resMsg);
-//		Display.getDisplay(this).setCurrent(al, loadingForm);
+		// Alert al = new Alert("Error", resMsg, null, AlertType.ERROR);
+		// al.setTimeout(MobisnMIDlet.ALERT_TIMEOUT);
+		// loadingForm.append(resMsg);
+		// Display.getDisplay(this).setCurrent(al, loadingForm);
 	}
 
 	public void receivedNewSMS(String sms, StreamConnection conn) {
@@ -315,10 +342,10 @@ public class MobisnMIDlet extends MIDlet {
 				Hashtable h = new Hashtable();
 				while (deEnum.hasMoreElements()) {
 					DataElement tmp = (DataElement) deEnum.nextElement();
-//					if(tmp.getDataType() == DataElement.STRING)
-//						System.out.println("yest");
+					// if(tmp.getDataType() == DataElement.STRING)
+					// System.out.println("yest");
 					String name = (String) tmp.getValue();
-//					System.out.println("name is : " + name);
+					// System.out.println("name is : " + name);
 					int idx = -1;
 					try {
 						idx = name.indexOf(":");
@@ -428,10 +455,10 @@ public class MobisnMIDlet extends MIDlet {
 	}
 
 	public String getDataElementString(DataElement de) {
-//		System.out.println("data element:dataseq "+DataElement.DATSEQ);
-//		System.out.println("data element:datalt "+DataElement.DATALT);
-//		System.out.println("data element:str "+DataElement.STRING);
-//		System.out.println("this data element:"+de.getDataType());
+		// System.out.println("data element:dataseq "+DataElement.DATSEQ);
+		// System.out.println("data element:datalt "+DataElement.DATALT);
+		// System.out.println("data element:str "+DataElement.STRING);
+		// System.out.println("this data element:"+de.getDataType());
 		int type = de.getDataType();
 		switch (type) {
 		case DataElement.DATSEQ:
@@ -442,17 +469,16 @@ public class MobisnMIDlet extends MIDlet {
 				ret += getDataElementString(d) + ",";
 			}
 			ret += "}";
-//			System.out.println("type dataseq returning "+ret);
+			// System.out.println("type dataseq returning "+ret);
 			return ret;
 		case DataElement.STRING:
-			String r = (String)de.getValue();
-//			System.out.println("type string returning "+r);
+			String r = (String) de.getValue();
+			// System.out.println("type string returning "+r);
 			return r;
 		default:
 			return "unknowm DataElement type: " + de.toString();
 		}
 	}
-
 
 	public void menuCommand(int selectedIndex) {
 		switch (selectedIndex) {
@@ -479,6 +505,6 @@ public class MobisnMIDlet extends MIDlet {
 			System.err.println("Unexpected choice...");
 			break;
 		}
-		
+
 	}
 }

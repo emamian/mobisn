@@ -1,5 +1,7 @@
 package edu.ndsu.cs.mobisn;
 
+//import java.io.IOException;
+
 import java.io.IOException;
 
 import javax.microedition.lcdui.Alert;
@@ -11,7 +13,6 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.List;
-import javax.microedition.lcdui.Screen;
 
 public class MainMenu implements CommandListener {
 
@@ -27,7 +28,6 @@ public class MainMenu implements CommandListener {
 	private final Command EXIT_CMD = new Command("Exit", Command.EXIT, 2);
 	/** Soft button for launching a client or sever. */
 	private final Command OK_CMD = new Command("Ok", Command.SCREEN, 1);
-
 
 	private Form loadingForm = new Form("Loading MobiSN");
 	private boolean isGraphicMenu = true;
@@ -68,7 +68,6 @@ public class MainMenu implements CommandListener {
 		if (c == EXIT_CMD) {
 			parent.destroyApp(true);
 			parent.notifyDestroyed();
-
 			return;
 		}
 		if (c == OK_CMD) {
@@ -90,11 +89,11 @@ public class MainMenu implements CommandListener {
 		if (!isGraphicMenu) {
 			for (int i = 0; i < images.length; i++) {
 				if (elementsImgs[i] != "") {
-					System.out.println("image "+i+" created");
+					System.out.println("image " + i + " created");
 					images[i] = Image.createImage(menuImagesPrefix
 							+ elementsImgs[i]);
 				} else {
-					System.out.println("image "+i+" not created");
+					System.out.println("image " + i + " not created");
 					images[i] = null;
 				}
 			}

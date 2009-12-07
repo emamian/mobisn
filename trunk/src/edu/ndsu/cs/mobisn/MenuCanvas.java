@@ -13,7 +13,7 @@ public class MenuCanvas extends Canvas {
 	private static int UNIT_WIDTH = 64;
 	private static int UNIT_HEIGHT = 64;
 	private static int SPACING = 12;
-	private static int TITLE_AREA_HEIGHT = 20;
+	private static int TITLE_AREA_HEIGHT = 30;
 	private static int BORDER = 5;
 
 	private MobisnMIDlet parent;
@@ -57,7 +57,7 @@ public class MenuCanvas extends Canvas {
 	protected void paint(Graphics g) {
 		try {
 
-			System.out.println("canvas paint");
+//			System.out.println("canvas paint");
 			Displayable d = Display.getDisplay(parent).getCurrent();
 			setWH(d.getWidth(), d.getHeight());
 //			System.out.println("crawing area " + width + ":" + height);
@@ -124,7 +124,7 @@ public class MenuCanvas extends Canvas {
 				String s = elements[i];
 				if (s == "Messages")
 					s += " (" + inboxCount + ")";
-				g.drawString(s, width / 2, 10, Graphics.TOP | Graphics.HCENTER);
+				g.drawString(s, width / 2, 5, Graphics.TOP | Graphics.HCENTER);
 				g.setColor(220, 172, 172);
 				int b = BORDER;
 				g.fillRoundRect(x - b, y - b, UNIT_WIDTH + b + b, UNIT_HEIGHT
@@ -150,7 +150,7 @@ public class MenuCanvas extends Canvas {
 	public void setWH(int w, int h) {
 		this.width = w;
 		this.height = h;
-		System.out.println("dimensition set to " + width + ":" + height);
+//		System.out.println("dimensition set to " + width + ":" + height);
 	}
 
 }
