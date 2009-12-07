@@ -45,7 +45,7 @@ public class BTDiscoveryClient implements Runnable, DiscoveryListener {
 	private MobisnMIDlet parent;
 
 	/** Becomes 'true' when this component is finalized. */
-	private boolean isClosed;
+	private boolean isClosed = false;
 
 	/** Collects the remote devices found during a search. */
 	private Vector /* RemoteDevice */devices = new Vector();
