@@ -1,7 +1,8 @@
-MIDlet-Version: 1.0.0
-MIDlet-Vendor: Midlet Suite Vendor
+Created-By: Juan Li, Peyman Emamian, Ryan Carlson
+MIDlet-1: MobisnMIDlet,/graphicMenu/2.png,edu.ndsu.cs.mobisn.MobisnMIDlet
 MIDlet-Jar-URL: MobiSN.jar
+MIDlet-Name: MobiSN (Mobile Social Network)
+MIDlet-Vendor: mobisn.googlecode.com
+MIDlet-Version: 1.0.7
 MicroEdition-Configuration: CLDC-1.1
-MIDlet-1: MyMidlet,,edu.ndsu.cs.mobisn.MobisnMIDlet
 MicroEdition-Profile: MIDP-2.0
-MIDlet-Name: MobiSN Midlet Suite
