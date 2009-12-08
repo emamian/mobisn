@@ -67,6 +67,7 @@ public class GUIInterests implements CommandListener {
 			try {
 				NodeData nd = (NodeData) interest.getChilds().elementAt(idx);
 				nd.setInterested(!nd.isInterested());
+				parent.rePublishProfile();
 				lst.set(idx, lst.getString(idx), checked[(nd.isInterested()?1:0)]);
 			} catch (Exception e) {
 				System.err.println("somthing wrong with selected index:"+idx + "in interest "+interest.getTitle());
