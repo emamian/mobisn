@@ -33,25 +33,25 @@ public class Profile {
 		switch (r.nextInt(4)) {
 		case 0:
 			this.name = "Peyman";
-			this.family = "Emamian" + r.nextInt(1000);
+			this.family = "Emamian " + r.nextInt(1000);
 			this.age = "25";
 			this.imagePath = "/profiles/peyman.jpg";
 			break;
 		case 1:
 			this.name = "Jen";
-			this.family = "Li" + r.nextInt(1000);
+			this.family = "Li " + r.nextInt(1000);
 			this.age = "20";
 			this.imagePath = "/profiles/jen.jpg";
 			break;
 		case 2:
 			this.name = "Ryan";
-			this.family = "Carlson" + r.nextInt(1000);
+			this.family = "Carlson " + r.nextInt(1000);
 			this.age = "21";
 			this.imagePath = "/profiles/Ryan.jpg";
 			break;
 		case 3:
 			this.name = "Chao";
-			this.family = "Liu" + r.nextInt(1000);
+			this.family = "Liu " + r.nextInt(1000);
 			this.age = "24";
 			this.imagePath = "/profiles/chao.jpg";
 			break;

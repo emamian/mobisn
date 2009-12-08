@@ -63,12 +63,13 @@ public class GUIMobiClient implements CommandListener {
 
 	private Vector listScreenKeys = new Vector();
 
-	GUIMobiClient(MobisnMIDlet parent, BTDiscoveryClient discoveryClient) throws BluetoothStateException {
+	GUIMobiClient(MobisnMIDlet parent, BTDiscoveryClient discoveryClient)
+			throws BluetoothStateException {
 		this.parent = parent;
 		mainScreen.addCommand(SCR_MAIN_BACK_CMD);
 		mainScreen.addCommand(SCR_MAIN_SEARCH_CMD);
 		mainScreen.setCommandListener(this);
-		bt_client = new BTMobiClient(this,discoveryClient);
+		bt_client = new BTMobiClient(this, discoveryClient);
 		listScreen.addCommand(SCR_PROFILES_BACK_CMD);
 		listScreen.addCommand(SCR_PROFILES_LOAD_CMD);
 		listScreen.addCommand(SCR_PROFILES_SMS_CMD);
@@ -197,6 +198,7 @@ public class GUIMobiClient implements CommandListener {
 
 	private void showTextSendForm(boolean show) {
 		if (show) {
+			smsBox.setString("");
 			parent.changeDisplay(smsBox);
 		}
 	}
@@ -218,7 +220,7 @@ public class GUIMobiClient implements CommandListener {
 	 * @returns false if no profile names were found actually
 	 */
 	boolean showFriendsNames() {
-		Vector keys = parent.getBaseOnlineKeys();//instead of base.keys();
+		Vector keys = parent.getBaseOnlineKeys();// instead of base.keys();
 		// no images actually
 		if (keys.isEmpty()) {
 			informSearchError("No profiles found");
@@ -231,7 +233,7 @@ public class GUIMobiClient implements CommandListener {
 			listScreen.delete(0);
 		}
 		listScreenKeys.removeAllElements();
-		for(int i=0;i<keys.size();i++) {
+		for (int i = 0; i < keys.size(); i++) {
 			String key = (String) keys.elementAt(i);
 			Profile myProfile = parent.getProfile();
 			String othersInterests = (String) parent.loadFromBase(key)
@@ -239,20 +241,21 @@ public class GUIMobiClient implements CommandListener {
 			double relevance;
 			try {
 				relevance = myProfile.getRelevance(othersInterests);
+				if (relevance < -1.0)
+					return false;
+				Profile friend = (Profile) parent.loadFromBase(key)
+						.getProfile();
+
+				listScreenKeys.addElement(key);
+				listScreen.append(friend.getFullName() + "(relevance:"
+						+ twoDigitDouble(relevance) + ")", null);
 			} catch (Exception e) {
 				System.err.println("could not find relevance: ");
-				System.err.println(" --- other interest:"+othersInterests);
-				System.err.println(" --- key:"+key);
+				System.err.println(" --- other interest:" + othersInterests);
+				System.err.println(" --- key:" + key);
 				e.printStackTrace();
 				return false;
 			}
-			if (relevance < -1.0)
-				return false;
-			Profile friend = (Profile) parent.loadFromBase(key).getProfile();
-
-			listScreenKeys.addElement(key);
-			listScreen.append(friend.getFullName() + "(relevance:" + relevance
-					+ ")", null);
 		}
 
 		if (listScreen.size() != listScreenKeys.size()) {
@@ -263,6 +266,17 @@ public class GUIMobiClient implements CommandListener {
 		parent.changeDisplay(listScreen);
 
 		return true;
+	}
+
+	private String twoDigitDouble(double relevance) {
+		String ret="";
+		int t = (int)relevance%10;
+		ret += t+".";
+		t = (int)(relevance*10.0)%10;
+		ret += t;
+		t = (int)(relevance*10.0)%10;
+		ret += t;
+		return ret;
 	}
 
 	/**
@@ -290,7 +304,7 @@ public class GUIMobiClient implements CommandListener {
 
 	public void clearBase() {
 		parent.clearBase();
-		
+
 	}
 
 	public FriendWrapper loadFromBase(String profileKeyToLoad) {
