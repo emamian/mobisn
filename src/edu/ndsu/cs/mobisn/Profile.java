@@ -16,6 +16,8 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 
+import com.sun.perseus.model.Time;
+
 public class Profile {
 
 	private String age;
@@ -30,7 +32,8 @@ public class Profile {
 	public Profile() throws IOException {
 		super();
 		Random r = new Random();
-		switch (r.nextInt(4)) {
+		int t = r.nextInt(10000);
+		switch (t%4) {
 		case 0:
 			this.name = "Peyman";
 			this.family = "Emamian " + r.nextInt(1000);
@@ -57,7 +60,7 @@ public class Profile {
 			break;
 		default:
 			this.name = "John";
-			this.family = "Smith" + r.nextInt(1000);
+			this.family = "Smith " + r.nextInt(1000);
 			this.age = "29";
 			this.imagePath = "/profiles/na.jpg";
 		}
