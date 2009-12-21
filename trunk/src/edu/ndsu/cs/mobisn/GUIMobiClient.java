@@ -247,7 +247,7 @@ public class GUIMobiClient implements CommandListener {
 						.getProfile();
 
 				listScreenKeys.addElement(key);
-				listScreen.append(friend.getFullName() + "(relevance:"
+				listScreen.append(friend.getFullName() + " (relevance: "
 						+ twoDigitDouble(relevance) + ")", null);
 			} catch (Exception e) {
 				System.err.println("could not find relevance: ");
