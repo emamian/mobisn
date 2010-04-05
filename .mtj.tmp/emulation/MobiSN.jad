@@ -1,9 +1,0 @@
-Created-By: Juan Li, Peyman Emamian, Ryan Carlson
-MIDlet-1: MobisnMIDlet,/graphicMenu/2.png,edu.ndsu.cs.mobisn.MobisnMIDlet
-MIDlet-Jar-Size: 471
-MIDlet-Jar-URL: MobiSN.jar
-MIDlet-Name: MobiSN (Mobile Social Network)
-MIDlet-Vendor: mobisn.googlecode.com
-MIDlet-Version: 1.0.8
-MicroEdition-Configuration: CLDC-1.1
-MicroEdition-Profile: MIDP-2.0
