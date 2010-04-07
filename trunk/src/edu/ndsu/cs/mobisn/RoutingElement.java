@@ -15,5 +15,4 @@ public class RoutingElement {
 	public String getInterests() {
 		return interests;
 	}
-	
 }

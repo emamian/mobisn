@@ -320,8 +320,10 @@ public class MobisnMIDlet extends MIDlet {
 				System.out.println("input Routing Table: ------");
 				if (de == null) {
 					System.out.println("no elemtn in routing table");
-				} else
-					System.out.println(getDataElementString(de));
+				} else{
+					String s = getDataElementString(de);
+					System.out.println(s);
+				}
 				System.out.println("input Routing Table: ------end");
 
 				if (de2 == null) {
