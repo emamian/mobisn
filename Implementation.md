@@ -1,0 +1,2 @@
+# Implementation #
+MobiSN is implemented in Java 2 Micro Edition (J2ME). J2ME’s Bluetooth API (JSR 82) is used for Bluetooth-enabled mobile phones. It implements all of the core features of a mobile ad hoc social networking, including: profile generating, friend matchmaking, routing control. We also implemented the ad hoc multi-hop text messaging and file sharing as part of the service pack for MobiSN.
